@@ -1,0 +1,380 @@
+% =====================================================================
+% Bien dich bang XeLaTeX (khuyen nghi) hoac LuaLaTeX de ho tro Unicode
+% tieng Viet day du:
+%   xelatex bao_cao_hawkbot.tex
+%   xelatex bao_cao_hawkbot.tex   (chay 2 lan de cap nhat muc luc/tham chieu)
+% Neu khong co font "Noto Serif"/"Noto Sans", may tinh se tu dong dung
+% font he thong thay the (fontspec se bao loi neu thieu hoan toan font
+% Unicode -- khi do doi sang "DejaVu Serif" hoac "Times New Roman").
+% =====================================================================
+\documentclass[12pt,a4paper]{article}
+
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{vietnamese}
+\setmainfont{Noto Serif}
+\setsansfont{Noto Sans}
+\setmonofont{Noto Sans Mono}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{siunitx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{enumitem}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!50!black,
+    citecolor=blue!50!black,
+    urlcolor=blue!50!black
+}
+
+\sisetup{output-decimal-marker={,}, group-separator={.}}
+
+\title{\textbf{Định vị vật thể tuyệt đối trong bản đồ ba chiều ngữ nghĩa\\
+cho robot giao hàng tự hành: nghiên cứu thực nghiệm\\
+về ảnh hưởng của baseline tam giác hoá và hiện tượng trôi định vị}}
+\author{Nhóm nghiên cứu Hawkbot}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Bài báo trình bày một hệ thống dựng bản đồ ba chiều (3D) có gắn nhãn ngữ nghĩa cho robot giao hàng tự hành hoạt động trong nhà, kết hợp mô hình phát hiện đối tượng YOLO11n, mô hình tái tạo cảnh quan đơn mắt (monocular reconstruction) MapAnything, và phương pháp tam giác hoá tia camera dựa trên dữ liệu định vị hành trình (odometry) cùng thông số nội tại camera đã được hiệu chỉnh. Thông qua một chuỗi thực nghiệm lặp lại có kiểm soát trên đối tượng mục tiêu là chậu cây trong môi trường thực, nghiên cứu phát hiện và định lượng một mối quan hệ có ý nghĩa thực tiễn quan trọng: độ chính xác định vị đối tượng phụ thuộc mạnh vào \emph{baseline} — quãng đường di chuyển của robot khi quan sát đối tượng. Trên 27 cặp so sánh độc lập, khi baseline gần bằng không, sai lệch vị trí giữa hai lần quan sát của cùng một vật thể dao động trong khoảng \SIrange{0.05}{4.6}{\meter} (trung bình khoảng \SI{2.1}{\meter}); khi baseline đạt từ \SI{0.85}{\meter} trở lên, sai lệch giảm xuống còn \SIrange{0.05}{0.50}{\meter}. Tuy nhiên, một thực nghiệm kiểm chứng bổ sung — so sánh trực tiếp với khoảng cách đo bằng thước dây thực địa — cho thấy \textbf{baseline lớn là điều kiện cần nhưng chưa đủ}: khi robot di chuyển \emph{xuyên tâm} (tiến thẳng về phía hoặc rời xa đối tượng) thay vì theo \emph{cung tròn quanh đối tượng}, phép tam giác hoá vẫn suy biến và cho kết quả ước lượng thấp hơn thực tế đáng kể dù baseline danh nghĩa vẫn lớn (ví dụ \SI{0.65}{\meter}$\rightarrow$chỉ ước lượng được \SI{0.71}{\meter}, trong khi khoảng cách thật đo bằng thước là \SI{3.00}{\meter}). Ngược lại, khi robot di chuyển theo cung tròn giữ khoảng cách quan sát ổn định, kết quả tam giác hoá đạt \SI{2.97}{\meter} — khớp gần như tuyệt đối với số đo thực địa. Nghiên cứu đề xuất một tiêu chí chẩn đoán bổ sung, không tốn thêm phần cứng: theo dõi khoảng cách camera--đối tượng qua từng khung hình trong một lượt quan sát — một xu hướng giảm dần đơn điệu là dấu hiệu tin cậy của suy biến hình học, bất kể baseline danh nghĩa lớn hay nhỏ. Bên cạnh đó, nghiên cứu cũng ghi nhận rằng chính hệ thống tái tạo cảnh quan MapAnything, không riêng gì hệ định vị hành trình của robot, cũng tích luỹ sai số theo thời gian trong các phiên thu thập dữ liệu kéo dài, và phân tích các giới hạn phần cứng hiện tại (độ phân giải camera thấp, năng lực tính toán tại biên hạn chế) vốn là nguyên nhân khiến các phương án khắc phục bằng phần cứng bổ sung chưa khả thi, từ đó lý giải vì sao các quy tắc thực nghiệm thuần phần mềm được lựa chọn làm giải pháp trước mắt.
+\end{abstract}
+
+\tableofcontents
+
+% =====================================================================
+\section{Giới thiệu}
+% =====================================================================
+
+Robot giao hàng tự hành hoạt động trong nhà cần xây dựng và duy trì một bản đồ ba chiều có gắn nhãn ngữ nghĩa (semantic 3D map) nhằm nhận biết vị trí các đối tượng và mốc tham chiếu trong môi trường — ví dụ hàng hoá cần giao, hoặc các vật thể cố định như chậu cây, bàn ghế, dùng làm điểm neo cho việc điều hướng. Một pipeline xử lý điển hình cho bài toán này kết hợp ba thành phần: (i) một mô hình phát hiện đối tượng hai chiều (YOLO) chạy trên từng khung hình camera, (ii) một mô hình tái tạo cảnh quan ba chiều từ ảnh đơn mắt (monocular 3D reconstruction) để khôi phục hình học của không gian, và (iii) một cơ chế xác định vị trí tuyệt đối của đối tượng trong hệ toạ độ thực (đơn vị mét), thường dựa trên dữ liệu định vị hành trình (odometry) của robot.
+
+Việc triển khai một hệ thống định vị đối tượng bằng tam giác hoá tia camera trong điều kiện thực tế — sử dụng phần cứng chi phí thấp và dữ liệu định vị hành trình vốn tích luỹ sai số theo thời gian — đặt ra câu hỏi cốt lõi về việc đâu là yếu tố thực sự chi phối độ chính xác của hệ thống, và làm thế nào để cải thiện độ tin cậy một cách hiệu quả nhất trong giới hạn tài nguyên hiện có. Trong quá trình triển khai thực nghiệm trên nền tảng robot Hawkbot (vận hành trên ROS2 Jazzy) với camera ESP32-CAM, nhóm nghiên cứu nhận thấy độ chính xác định vị của cùng một đối tượng biến thiên đáng kể giữa các lần quan sát khác nhau trong cùng một phiên thu thập dữ liệu. Bài báo này trình bày một chuỗi thực nghiệm có kiểm soát nhằm phân tích và định lượng các yếu tố chi phối hiện tượng nêu trên, từ đó xác định một phát hiện có giá trị ứng dụng cao: \textbf{baseline tam giác hoá} — quãng đường robot di chuyển ngang trong lúc quan sát đối tượng — là yếu tố quyết định độ chính xác định vị, có ảnh hưởng vượt trội so với loại đối tượng mục tiêu hay bản thân độ phân giải camera. Phát hiện này mở ra khả năng xây dựng một quy tắc thiết kế hành vi robot đơn giản, giúp cải thiện đáng kể độ tin cậy của bản đồ ngữ nghĩa mà không đòi hỏi đầu tư thêm phần cứng.
+
+% =====================================================================
+\section{Phương pháp}
+% =====================================================================
+
+\subsection{Nền tảng phần cứng}
+
+\begin{table}[H]
+\centering
+\caption{Thông số kỹ thuật hệ thống}
+\label{tab:hw-specs}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Thành phần} & \textbf{Thông số} \\
+\midrule
+Robot & Hawkbot, điều khiển qua ROS2 Jazzy (container \texttt{hawkbot-bringup}) \\
+Camera & ESP32-CAM, độ phân giải QVGA ($320\times240$ px) \\
+Nguồn odometry & \texttt{nav\_msgs/Odometry} trên topic \texttt{/odom} \\
+Máy tính xử lý & Máy chủ GPU từ xa, kết nối qua mạng nội bộ \\
+Mô hình phát hiện & YOLO11n (nano), huấn luyện sẵn trên COCO-80 \\
+Mô hình dựng 3D & MapAnything (\texttt{facebook/map-anything}, HuggingFace) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Ma trận nội tại camera $K$ (hiệu chỉnh bằng phương pháp bàn cờ, 74/75 ảnh hợp lệ, sai số tái chiếu trung bình 0,12 điểm ảnh)}
+\label{tab:intrinsics}
+\[
+K = \begin{bmatrix}
+428{,}72 & 0 & 148{,}61 \\
+0 & 427{,}60 & 126{,}02 \\
+0 & 0 & 1
+\end{bmatrix}
+\]
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{paper_figs/anh_thuc_te.jpg}
+\caption{Môi trường thử nghiệm thực tế: robot Hawkbot (đơn vị hình trụ nhỏ ở giữa sàn) hoạt động trong không gian văn phòng, với chậu cây làm đối tượng mục tiêu chính của các thực nghiệm trình bày trong bài báo này.}
+\label{fig:real-photo}
+\end{figure}
+
+\subsection{Hạn chế của nền tảng phần cứng hiện tại}
+\label{sec:hw-limits}
+
+Trước khi trình bày kiến trúc pipeline, cần làm rõ hai giới hạn phần cứng có ảnh hưởng xuyên suốt đến các lựa chọn phương pháp luận của nghiên cứu này.
+
+\textbf{Độ phân giải camera.} Camera ESP32-CAM được cấu hình ở độ phân giải QVGA ($320\times240$ điểm ảnh) nhằm đảm bảo băng thông truyền ảnh qua mạng không dây và tốc độ khung hình ổn định. Tuy nhiên, độ phân giải thấp này giới hạn đáng kể độ chính xác định vị góc (angular precision) của mọi phương pháp dựa trên việc xác định vị trí điểm ảnh — bao gồm cả tâm bounding box của YOLO lẫn các phương pháp thay thế đã được thử nghiệm. Cụ thể, khi đánh giá phương án dùng mã định vị ArUco kích thước \SI{15}{\centi\meter} làm điểm neo tuyệt đối (trình bày chi tiết ở Mục~\ref{sec:hw-alternatives}), một sai lệch một điểm ảnh trong việc xác định góc của mã, ở khoảng cách quan sát trên hai mét, đã tương ứng với sai số vị trí thực tế lên tới vài chục xăng-ti-mét. Đây là hệ quả trực tiếp của việc đối tượng mục tiêu chỉ chiếm một số lượng điểm ảnh rất nhỏ trong khung hình \num{320}$\times$\num{240}.
+
+\textbf{Năng lực tính toán.} Camera ESP32-CAM không có khả năng xử lý thị giác máy tính tại chỗ (on-device inference); toàn bộ suy luận mô hình YOLO và MapAnything được thực hiện trên một máy chủ GPU từ xa, kết nối qua mạng cục bộ. Kiến trúc này kéo theo hai hệ quả: thứ nhất, pipeline hiện tại vận hành theo phương thức xử lý hậu kỳ (offline, post-hoc) trên toàn bộ phiên thu thập dữ liệu, chứ không phải một hệ thống định vị và dựng bản đồ đồng thời theo thời gian thực (real-time SLAM); thứ hai, việc bổ sung các cơ chế hiệu chỉnh trực tuyến — như đóng vòng lặp (loop closure) hoặc tối ưu hoá đồ thị tư thế toàn cục — vốn là giải pháp kỹ thuật chuẩn mực cho vấn đề trôi định vị, đòi hỏi đầu tư kỹ thuật và tài nguyên tính toán đáng kể mà nền tảng hiện tại chưa đáp ứng được.
+
+Hai giới hạn trên là lý do trực tiếp khiến nghiên cứu này tập trung tìm kiếm một \textbf{giải pháp thuần phần mềm, không đòi hỏi nâng cấp phần cứng} — cụ thể là quy tắc lọc theo baseline trình bày ở Mục~\ref{sec:baseline-error} — thay vì theo đuổi các hướng khắc phục bằng phần cứng bổ sung (camera độ phân giải cao hơn, mã định vị lớn hơn, hoặc cụm tính toán biên mạnh hơn), vốn nằm ngoài phạm vi tài nguyên hiện có của dự án và được đề xuất là hướng phát triển trong tương lai (Mục~\ref{sec:limitations}).
+
+\subsection{Kiến trúc pipeline}
+
+Các bước xử lý được thực hiện tuần tự cho mỗi phiên chụp (capture) như sau:
+
+\begin{enumerate}[label=\textbf{Bước \arabic*.}]
+    \item \textbf{Thu thập dữ liệu:} Robot di chuyển tự do trong phòng, camera chụp ảnh liên tục ($\sim$1 khung/giây), đồng thời ghi lại vị trí và hướng (odometry) tương ứng từng khung hình vào \texttt{poses.json}.
+    \item \textbf{Chọn khung hình ưu tiên:} Chạy YOLO trên toàn bộ khung hình gốc, ưu tiên chọn ra tối đa 130 khung có chứa đối tượng mục tiêu (chậu cây), lấy mẫu đều theo từng ``lần ghé qua'' (visit) để đảm bảo đa dạng góc nhìn.
+    \item \textbf{Dựng phòng 3D:} Chạy MapAnything trên tập khung đã chọn để tạo point cloud ngữ nghĩa của toàn bộ phòng (kèm nhãn lớp COCO cho từng điểm).
+    \item \textbf{Tam giác hoá vị trí đối tượng:} Với mỗi khung hình có phát hiện đối tượng, dựng một tia (ray) 3D từ tâm camera qua điểm ảnh trung tâm bounding box, sử dụng $K^{-1}$ và vị trí/hướng thực từ odometry (\emph{không} dùng pose của MapAnything). Vị trí đối tượng được ước lượng bằng bình phương tối thiểu giao điểm gần nhất của tất cả các tia (\S~\ref{sec:math}).
+    \item \textbf{Gom nhóm theo màu sắc:} Trong mỗi lần ghé qua, các phát hiện được gom cụm theo độ tương đồng histogram màu HSV (ngưỡng tương quan 0,55) để tránh trộn lẫn hai vật thể khác nhau đứng gần nhau vào cùng một phép tam giác hoá.
+    \item \textbf{Loại tia nhiễu:} Thuật toán lặp loại bỏ tia có sai số vuông góc (residual) lớn nhất nếu residual đó vượt quá 2,5 lần trung vị và trên \SI{0.15}{\meter}, tối đa 40\% số tia bị loại.
+    \item \textbf{Đánh giá độ tin cậy bằng baseline:} Với mỗi nhóm kết quả, tính baseline = khoảng cách lớn nhất giữa các vị trí odometry của các khung hình đóng góp. Baseline lớn = có đủ thị sai (parallax) hình học để tam giác hoá tin cậy.
+\end{enumerate}
+
+\subsection{Công thức tam giác hoá}
+\label{sec:math}
+
+Với mỗi khung hình $i$ có phát hiện đối tượng tại điểm ảnh $(u_i, v_i)$ (tâm bounding box), tia camera trong hệ toạ độ camera được tính:
+\begin{equation}
+\mathbf{r}_{\text{cam}} = K^{-1} \begin{bmatrix} u_i \\ v_i \\ 1 \end{bmatrix}, \qquad
+\hat{\mathbf{r}}_{\text{cam}} = \frac{\mathbf{r}_{\text{cam}}}{\lVert \mathbf{r}_{\text{cam}} \rVert}
+\end{equation}
+
+Tia được chuyển sang hệ toạ độ robot (có hiệu chỉnh dấu trục trái--phải do camera có \texttt{hmirror=1}), sau đó sang hệ toạ độ thế giới bằng ma trận xoay $R_i$ từ quaternion odometry:
+\begin{equation}
+\mathbf{r}_{\text{robot}} = \begin{bmatrix} r_{z} \\ r_{x} \\ -r_{y} \end{bmatrix}_{\text{cam}}, \qquad
+\mathbf{d}_i = R_i \, \mathbf{r}_{\text{robot}}, \qquad
+\mathbf{o}_i = \mathbf{p}_i + R_i \begin{bmatrix} 0{,}08 \\ 0 \\ 0 \end{bmatrix} + \begin{bmatrix} 0 \\ 0 \\ 0{,}12 \end{bmatrix}
+\end{equation}
+với $\mathbf{p}_i$ là vị trí odometry của khung $i$, $0{,}08\,$m là độ lệch camera phía trước tâm robot, $0{,}12\,$m là chiều cao camera.
+
+Vị trí đối tượng $\mathbf{x}^*$ được ước lượng bằng cách tối thiểu hoá tổng bình phương khoảng cách vuông góc từ $\mathbf{x}$ đến tất cả các tia $(\mathbf{o}_i, \mathbf{d}_i)$:
+\begin{equation}
+\mathbf{x}^* = \operatorname*{arg\,min}_{\mathbf{x}} \sum_i \left\lVert \left(I - \mathbf{d}_i \mathbf{d}_i^\top\right) (\mathbf{x} - \mathbf{o}_i) \right\rVert^2
+\end{equation}
+đây là bài toán bình phương tối thiểu tuyến tính, giải trực tiếp bằng \texttt{numpy.linalg.lstsq}.
+
+\textbf{Baseline} của một nhóm $n$ tia được định nghĩa:
+\begin{equation}
+b = \max_{i,j} \lVert \mathbf{p}_i - \mathbf{p}_j \rVert, \qquad i,j \in \{1,\dots,n\}
+\end{equation}
+
+\textbf{Lưu ý về vai trò của điểm tin cậy phát hiện (confidence score).} Điểm tin cậy do YOLO trả về cho mỗi phát hiện chỉ được sử dụng như một \emph{ngưỡng lọc nhị phân} (giữ lại phát hiện nếu điểm tin cậy $\geq 0{,}3$, loại bỏ nếu thấp hơn); giá trị cụ thể của điểm tin cậy (ví dụ 0,31 hay 0,95) \emph{không} được dùng để đánh giá độ tin cậy của vị trí ước lượng. Điểm tin cậy của YOLO phản ánh mức độ chắc chắn của mô hình rằng một vùng ảnh 2D chứa đối tượng thuộc lớp mục tiêu, và hoàn toàn không mang thông tin về độ chính xác hình học ba chiều: một khung hình có điểm tin cậy rất cao vẫn có thể góp phần vào một kết quả tam giác hoá kém tin cậy nếu tất cả các khung hình như vậy được chụp từ cùng một vị trí camera. Độ tin cậy vị trí, như trình bày ở Mục~\ref{sec:baseline-error}, hoàn toàn được quyết định bởi \textbf{baseline} — tức bởi sự đa dạng hình học của các vị trí camera đóng góp vào phép tam giác hoá — chứ không phải bởi độ tự tin của mô hình phát hiện đối tượng.
+
+% =====================================================================
+\section{Kết quả thực nghiệm}
+% =====================================================================
+
+\subsection{Thiết lập thí nghiệm}
+
+Dữ liệu thực nghiệm được thu thập qua hai phiên chụp (capture 28 và capture 29), trên một đối tượng mục tiêu duy nhất: một chậu cây cố định trong phòng (tán lá rộng khoảng \SI{40}{\centi\meter}). Việc chỉ có một đối tượng mục tiêu duy nhất, được xác nhận trực tiếp bởi người vận hành, cho phép loại trừ hoàn toàn khả năng nhầm lẫn giữa nhiều vật thể khác nhau, từ đó quy mọi sai lệch vị trí quan sát được về đúng một nguyên nhân: sai số của quá trình định vị và tam giác hoá. Bảng~\ref{tab:capture-summary} tóm tắt hai phiên chụp.
+
+\begin{table}[H]
+\centering
+\caption{Tóm tắt các phiên chụp thực nghiệm}
+\label{tab:capture-summary}
+\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+\textbf{Capture} & \textbf{Số khung gốc} & \textbf{Thời lượng} & \textbf{Đối tượng} & \textbf{Số khung có vật} & \textbf{RMS global fit} \\
+\midrule
+28 & 159 & $\sim$2,6 phút & Chậu cây & 81 & \SI{0.19}{\meter} \\
+29 & 130 & $\sim$2,15 phút & Chậu cây & 42 & \SI{0.27}{\meter} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\emph{Ghi chú:} một chuỗi thực nghiệm bổ sung trên đối tượng mục tiêu là chai nhựa đang được tiến hành và dự kiến bổ sung vào phiên bản tiếp theo của bài báo.
+
+\subsection{Bản đồ ngữ nghĩa 3D}
+
+Hình~\ref{fig:semantic-map} minh hoạ bản đồ điểm đám mây (point cloud) ngữ nghĩa được dựng bởi MapAnything cho capture 29, chụp trực tiếp từ công cụ xem 3D tương tác (WebGL) phát triển riêng cho nghiên cứu này, ở bốn góc nhìn/mức thu phóng khác nhau. Cụm điểm xanh lá đậm ở phía trên là chậu cây được gán nhãn lớp COCO ``potted plant''. Marker màu thể hiện bốn lần tam giác hoá độc lập vị trí chậu cây (ký hiệu A--D theo Bảng~\ref{tab:cap29-detail}); đường màu đỏ san hô là quỹ đạo di chuyển của robot; điểm ``Start'' là vị trí xuất phát.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[t]{0.49\textwidth}
+\includegraphics[width=\textwidth]{paper_figs/viewer_shot1.png}
+\caption{Toàn cảnh phòng và quỹ đạo robot}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.49\textwidth}
+\includegraphics[width=\textwidth]{paper_figs/viewer_shot2.png}
+\caption{Phóng to vùng chậu cây và điểm xuất phát}
+\end{subfigure}
+
+\vspace{0.6em}
+\begin{subfigure}[t]{0.49\textwidth}
+\includegraphics[width=\textwidth]{paper_figs/viewer_shot3.png}
+\caption{Góc nhìn nghiêng, thấy rõ quỹ đạo hình tia}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.49\textwidth}
+\includegraphics[width=\textwidth]{paper_figs/viewer_shot4.png}
+\caption{Cận cảnh cụm điểm chậu cây với marker A/B}
+\end{subfigure}
+\caption{Bản đồ ngữ nghĩa 3D dựng từ 130 khung hình (capture 29) bằng MapAnything, chụp từ công cụ xem tương tác ở bốn góc nhìn. Marker tròn viền trắng là bốn lần tam giác hoá độc lập vị trí chậu cây — marker A và B (baseline cao) trùng khít lên nhau do hai lần đo chỉ lệch \SI{0.047}{\meter}, trong khi C và D (baseline thấp) lệch rõ khỏi cụm điểm cây thật, nằm gần điểm xuất phát.}
+\label{fig:semantic-map}
+\end{figure}
+
+\subsection{Minh hoạ phát hiện đối tượng}
+
+Hình~\ref{fig:yolo-demo} minh hoạ kết quả phát hiện YOLO11n trên hai khung hình gốc từ camera ESP32-CAM độ phân giải QVGA. Dù độ phân giải thấp, mô hình vẫn phát hiện ổn định đối tượng chậu cây với độ tin cậy (confidence) 0,75--0,80.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{paper_figs/fig_yolo_detection.png}
+\caption{Kết quả phát hiện YOLO11n (lớp ``potted plant'') trên hai khung hình từ hai lần quan sát khác nhau trong capture 29.}
+\label{fig:yolo-demo}
+\end{figure}
+
+\subsection{Phân tích sai số theo baseline}
+\label{sec:baseline-error}
+
+Đây là kết quả trung tâm của nghiên cứu. Trong mỗi phiên chụp, các khung hình có phát hiện chậu cây được tam giác hoá thành nhiều nhóm độc lập theo từng lần robot ghé qua (capture 28: bảy nhóm ký hiệu A--G; capture 29: bốn nhóm ký hiệu A--D). Do chỉ có một đối tượng vật lý duy nhất, mọi cặp so sánh giữa hai nhóm bất kỳ trong cùng một phiên đều phản ánh sai lệch định vị của cùng một điểm thực. Xét toàn bộ các tổ hợp cặp có thể có trong nội bộ từng phiên chụp, chúng tôi thu được \textbf{27 cặp so sánh độc lập}. Với mỗi cặp, ba đại lượng được tính: (i) baseline nhỏ nhất trong hai nhóm, (ii) khoảng cách thời gian giữa hai lần quan sát, và (iii) sai lệch vị trí Euclid giữa hai kết quả tam giác hoá. Hình~\ref{fig:baseline-error} trực quan hoá toàn bộ 27 cặp; Bảng~\ref{tab:baseline-error} tóm tắt theo từng khoảng baseline.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{paper_figs/fig_baseline_vs_error.png}
+\caption{Sai lệch vị trí giữa hai lần quan sát lặp lại theo baseline nhỏ nhất, cho toàn bộ 27 cặp so sánh trong nội bộ capture 28 và capture 29. Màu điểm thể hiện khoảng cách thời gian giữa hai lần quan sát. Vùng tô xanh nhạt bên phải đường ngưỡng $b=\SI{0.85}{\meter}$ là vùng sai số thấp quan sát được.}
+\label{fig:baseline-error}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Thống kê sai lệch vị trí theo khoảng baseline, tổng hợp từ 27 cặp so sánh}
+\label{tab:baseline-error}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Khoảng baseline} & \textbf{Số cặp} & \textbf{Sai lệch nhỏ nhất} & \textbf{Sai lệch lớn nhất} & \textbf{Sai lệch trung bình} \\
+\midrule
+$b \approx 0$ (dưới \SI{0.01}{\meter}) & 23 & \SI{0.047}{\meter} & \SI{4.612}{\meter} & \SI{2.147}{\meter} \\
+$b \approx 0{,}08$\,m & 2 & \SI{1.510}{\meter} & \SI{1.556}{\meter} & \SI{1.533}{\meter} \\
+$b \geq 0{,}85$\,m & 2 & \SI{0.047}{\meter} & \SI{0.500}{\meter} & \SI{0.274}{\meter} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Xu hướng quan sát được rất rõ ràng: \textbf{khi baseline gần bằng không, sai lệch vị trí dao động không thể đoán trước trong khoảng từ \SI{0.047}{\meter} đến \SI{4.612}{\meter}}, với giá trị trung bình khoảng \SI{2.1}{\meter} — vùng này bị chi phối bởi bài toán tam giác hoá thiếu điều kiện (ill-conditioned), do các tia gần như song song hoặc xuất phát từ cùng một điểm nhìn, khiến giao điểm bình phương tối thiểu trở nên nhạy cảm với nhiễu đo. Đáng lưu ý, ngay cả khi baseline đạt mức khiêm tốn \SI{0.08}{\meter} (hai cặp so sánh liên quan đến nhóm C của capture 29), sai lệch vẫn ở mức cao ($\sim$\SI{1.5}{\meter}), cho thấy một baseline nhỏ không mang lại cải thiện đáng kể. Ngược lại, \textbf{khi baseline đạt từ \SI{0.85}{\meter} trở lên}, sai lệch giảm mạnh và ổn định xuống còn \SIrange{0.047}{0.500}{\meter} — một bước nhảy về độ tin cậy, không phải một sự cải thiện dần đều, gợi ý sự tồn tại của một ngưỡng baseline tới hạn nằm đâu đó trong khoảng \SIrange{0.08}{0.85}{\meter} mà nghiên cứu hiện tại chưa đủ dữ liệu để xác định chính xác hơn.
+
+Kết quả này củng cố cách diễn giải hình học của hiện tượng: baseline lớn tương ứng với góc thị sai (parallax) rộng giữa các tia quan sát, giúp bài toán bình phương tối thiểu xác định giao điểm trở nên ổn định số học (well-conditioned) hơn hẳn so với trường hợp các tia gần như đồng quy tại một điểm nhìn duy nhất.
+
+\subsection{Trường hợp điển hình: Capture 29}
+
+Capture 29 đạt kết quả tốt nhất trong toàn bộ thực nghiệm và được trình bày chi tiết làm minh hoạ. Bảng~\ref{tab:cap29-detail} liệt kê đầy đủ bốn lần quan sát độc lập của cùng một chậu cây; Hình~\ref{fig:topdown} vẽ quỹ đạo odometry của robot cùng bốn vị trí ước lượng.
+
+\begin{table}[H]
+\centering
+\caption{Bốn lần tam giác hoá độc lập vị trí chậu cây, capture 29}
+\label{tab:cap29-detail}
+\small
+\begin{tabular}{@{}clcccl@{}}
+\toprule
+\textbf{Ký hiệu} & \textbf{Khung hình} & \textbf{Số tia} & \textbf{Baseline} & \textbf{Toạ độ thực (m)} & \textbf{Độ tin cậy} \\
+\midrule
+A & 0--9    & 10 & \SI{0.86}{\meter} & $(1{,}278,\ -0{,}086)$ & Cao \\
+B & 29--41  & 15 & \SI{0.89}{\meter} & $(1{,}232,\ -0{,}078)$ & Cao \\
+C & 80--86  & 7  & \SI{0.08}{\meter} & $(-0{,}262,\ 0{,}140)$ & Thấp \\
+D & 120--129 & 10 & \SI{0.00}{\meter} & $(-0{,}179,\ 0{,}119)$ & Thấp \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{paper_figs/fig_topdown_new29.png}
+\caption{Quỹ đạo odometry của robot (các chấm màu theo thời gian) và bốn vị trí chậu cây ước lượng độc lập (ngôi sao). A và B (baseline cao) hội tụ về cùng một điểm; C và D (baseline thấp) lệch khỏi A/B khoảng \SIrange{1.0}{1.3}{\meter}.}
+\label{fig:topdown}
+\end{figure}
+
+Khoảng cách giữa A và B chỉ \SI{0.047}{\meter} ($4{,}7\,$cm) — nhỏ hơn kích thước vật lý của chính chậu cây — trong khi khoảng cách từ A/B đến C hoặc D dao động \SIrange{1.0}{1.3}{\meter}. Đây là bằng chứng thực nghiệm mạnh mẽ cho thấy ngưỡng baseline \SI{0.85}{\meter} là một tiêu chí lọc thực tế hiệu quả — tuy nhiên, như trình bày ở Mục~\ref{sec:radial-degeneracy}, ngưỡng này chỉ là điều kiện \emph{cần}, chưa phải điều kiện \emph{đủ}.
+
+\subsection{Kiểm chứng thực địa: baseline lớn không đủ, hướng di chuyển mới là yếu tố quyết định}
+\label{sec:radial-degeneracy}
+
+Để kiểm chứng độ chính xác tuyệt đối (không chỉ độ nhất quán tương đối) của phương pháp tam giác hoá, chúng tôi tiến hành đo khoảng cách thực tế bằng thước dây từ điểm xuất phát của robot đến gốc chậu cây: kết quả là \textbf{\SI{3.00}{\meter}}. Trước khi so sánh, một thực nghiệm hiệu chuẩn độc lập được thực hiện: cho robot di chuyển thẳng một quãng đã đo trước (\SI{5}{\meter}), rồi đối chiếu với quãng đường odometry ghi nhận được (\SI{5.30}{\meter}, sai khác $6\%$) — qua đó loại trừ khả năng odometry có sai số hệ số tỷ lệ (scale error) đáng kể, và xác nhận nguồn sai số phải nằm trong chính phép tam giác hoá.
+
+Bảy phiên chụp bổ sung (capture 29, 32--36) sau đó được thực hiện, mỗi lần robot quan sát chậu cây theo một kiểu di chuyển khác nhau. Bảng~\ref{tab:convergence} và Hình~\ref{fig:convergence} trình bày kết quả ước lượng khoảng cách qua từng lần, cho thấy một xu hướng hội tụ rõ rệt về giá trị đo thực địa khi kiểu di chuyển của robot chuyển dần từ \emph{xuyên tâm} (đi thẳng tiến/lùi so với vật) sang \emph{cung tròn} (giữ khoảng cách quan sát tương đối ổn định, chỉ đổi góc nhìn).
+
+\begin{table}[H]
+\centering
+\caption{Hội tụ về giá trị đo thực địa (\SI{3.00}{\meter}) qua các lần thử với kiểu di chuyển khác nhau}
+\label{tab:convergence}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Capture} & \textbf{Baseline} & \textbf{Kiểu di chuyển} & \textbf{Khoảng cách ước lượng} \\
+\midrule
+29 & \SI{0.86}{\meter} & Chủ yếu xuyên tâm & \SI{1.26}{\meter} \\
+32 & 0.57--1.55\,m & Chủ yếu xuyên tâm & \SI{0.95}{\meter} \\
+33 & 0.68--1.84\,m & Kết hợp một phần cung tròn & \SI{1.84}{\meter} \\
+34 & \SI{0.78}{\meter} & Kết hợp một phần cung tròn & \SI{2.05}{\meter} \\
+35 & \SI{1.78}{\meter} & Cung tròn phần lớn, còn 1 đoạn xuyên tâm ngắn & \SI{2.30}{\meter} \\
+\textbf{36} & \textbf{\SI{0.90}{\meter}} & \textbf{Cung tròn sạch (không đoạn xuyên tâm)} & \textbf{\SI{2.97}{\meter}} \\
+\midrule
+\multicolumn{3}{r}{\emph{Giá trị đo thực địa (thước dây):}} & \textbf{\SI{3.00}{\meter}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{paper_figs/fig_convergence.png}
+\caption{Khoảng cách ước lượng qua bảy lần thử liên tiếp trên cùng một đối tượng vật lý, hội tụ về giá trị đo thực địa \SI{3.00}{\meter} khi kiểu di chuyển của robot chuyển từ xuyên tâm (đỏ) sang cung tròn sạch (xanh lá).}
+\label{fig:convergence}
+\end{figure}
+
+Đáng chú ý, baseline của capture 36 (\SI{0.90}{\meter}) không lớn hơn nhiều so với capture 29 (\SI{0.86}{\meter}) hay một số nhóm trong capture 32--35 — nhưng chỉ riêng capture 36 mới cho kết quả khớp với thực địa. Sự khác biệt nằm ở \emph{hình dạng chuyển động}, không phải độ lớn baseline. Hình~\ref{fig:arc-vs-radial} minh hoạ trực tiếp cơ chế gây suy biến: trong cùng một phiên chụp (capture 36), một nhóm khung hình có khoảng cách camera--đối tượng gần như không đổi (\SIrange{2.83}{3.24}{\meter}) cho kết quả tam giác hoá \SI{2.97}{\meter}; một nhóm khung hình khác, với baseline gần tương đương (\SI{0.65}{\meter}) nhưng khoảng cách camera--đối tượng giảm dần đơn điệu (từ \SI{1.00}{\meter} xuống \SI{0.55}{\meter}) do robot đi thẳng lại gần, chỉ cho kết quả \SI{0.71}{\meter} — thấp hơn thực tế hơn bốn lần.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{paper_figs/fig_arc_vs_radial.png}
+\caption{Khoảng cách camera--đối tượng qua từng khung hình trong hai lượt quan sát của capture 36. Lượt di chuyển theo cung tròn (xanh lá) giữ khoảng cách gần như không đổi và cho kết quả khớp với thực địa (đường nét đứt); lượt di chuyển xuyên tâm (đỏ) có khoảng cách giảm dần đơn điệu và cho kết quả ước lượng thấp một cách hệ thống.}
+\label{fig:arc-vs-radial}
+\end{figure}
+
+\textbf{Diễn giải hình học.} Baseline (khoảng cách lớn nhất giữa các vị trí camera đóng góp) chỉ đo được độ lớn dịch chuyển, không phân biệt được \emph{hướng} dịch chuyển so với đường ngắm tới đối tượng. Khi robot di chuyển dọc theo (hoặc gần dọc theo) đường ngắm — tức tiến thẳng về phía đối tượng — góc thị sai (parallax) thực sự giữa các tia quan sát tăng rất chậm theo quãng đường di chuyển, khiến bài toán bình phương tối thiểu vẫn thiếu điều kiện (ill-conditioned) dù baseline danh nghĩa lớn. Ngược lại, di chuyển theo cung tròn quanh đối tượng tối đa hoá góc thị sai trên mỗi mét di chuyển, cho điều kiện số học tốt nhất.
+
+\textbf{Tiêu chí chẩn đoán thực tế.} Từ quan sát này, chúng tôi đề xuất một tiêu chí bổ sung, không yêu cầu thêm phần cứng hay dữ liệu ground-truth: \textbf{theo dõi khoảng cách camera--đối tượng (ước lượng sơ bộ) qua từng khung hình trong một lượt quan sát}. Một xu hướng giảm dần gần như đơn điệu trong suốt lượt quan sát là dấu hiệu đáng tin cậy của suy biến do chuyển động xuyên tâm, và kết quả tam giác hoá tương ứng nên bị loại bỏ hoặc hạ mức tin cậy, bất kể baseline danh nghĩa đo được lớn đến đâu. Tiêu chí baseline \SI{0.85}{\meter} trình bày ở Mục~\ref{sec:baseline-error} vẫn có giá trị như một điều kiện lọc sơ bộ nhanh, nhưng cần được áp dụng cùng với tiêu chí bổ sung này để đạt độ tin cậy cao.
+
+% =====================================================================
+\section{Thảo luận}
+% =====================================================================
+
+\subsection{Hai nguồn sai số độc lập}
+
+Một phát hiện quan trọng khác nảy sinh khi cố gắng hiển thị chính xác marker vị trí đối tượng lên bản đồ điểm đám mây gộp của toàn bộ phiên chụp (thay vì chỉ báo cáo toạ độ thực bằng mét). Khi so sánh vị trí điểm ảnh của đối tượng do người dùng chọn trực tiếp trên bản đồ 3D (qua công cụ chọn điểm tương tác) với vị trí tam giác hoá từ odometry, chúng tôi phát hiện sai lệch lên tới hơn 4 mét ở một trường hợp — vượt xa phạm vi quỹ đạo robot đã đi qua trên thực tế. Điều tra sâu hơn bằng thuật toán phân cụm DBSCAN trên các điểm được gán nhãn ngữ nghĩa cho cùng một vật thể cho thấy: ngay cả sau khi lọc nhiễu, cụm điểm ``sạch'' của MapAnything vẫn phân tán trên phạm vi 1--2 mét khi vật thể được nhìn thấy ở các thời điểm cách xa nhau trong một phiên chụp dài.
+
+Kết luận rút ra: \textbf{không chỉ odometry bánh xe của robot bị trôi theo thời gian, mà chính hệ thống dựng ảnh đơn mắt MapAnything cũng tích luỹ sai số tư thế camera (pose drift) qua các khung hình cách xa nhau về thời gian}, do đây là kiến trúc dựng ảnh một lượt (single-pass), không có bước đóng vòng lặp (loop closure) hay tối ưu hoá đồ thị tư thế toàn cục (global pose graph optimization). Hai nguồn sai số này độc lập với nhau và không triệt tiêu lẫn nhau, khiến việc hiển thị chính xác một đối tượng tĩnh lên bản đồ điểm đám mây gộp toàn phiên trở nên không đáng tin cậy, dù toạ độ thực (tính trực tiếp từ odometry, không qua MapAnything) vẫn có thể chính xác.
+
+Để giảm thiểu tác động thị giác của vấn đề trên khi hiển thị minh hoạ, chúng tôi áp dụng một biện pháp neo cục bộ (local anchoring): xác định cụm điểm ngữ nghĩa dày đặc nhất tương ứng với đối tượng mục tiêu bằng thuật toán phân cụm DBSCAN, sau đó dùng độ lệch giữa cụm điểm này và vị trí ước lượng đáng tin cậy nhất (baseline cao nhất) làm véc-tơ hiệu chỉnh áp dụng thống nhất cho toàn bộ các vị trí ước lượng của cùng đối tượng. Biện pháp này chỉ có giá trị minh hoạ trực quan trong phạm vi cục bộ quanh một đối tượng duy nhất; nó không giải quyết được vấn đề gốc rễ và không nên áp dụng cho các vị trí ở xa đối tượng tham chiếu (ví dụ điểm xuất phát của robot), do quan hệ giữa không gian toạ độ của MapAnything và không gian thực không phải một phép biến đổi cứng đồng nhất trên toàn bộ cảnh.
+
+\subsection{Gộp toàn bộ khung hình không cải thiện độ chính xác}
+\label{sec:no-naive-merge}
+
+Một giả thuyết tự nhiên là: nếu baseline lớn giúp cải thiện độ chính xác, thì việc sử dụng \emph{toàn bộ} khung hình có phát hiện đối tượng trong một phiên chụp (nhằm tối đa hoá baseline) sẽ cho kết quả tốt nhất. Chúng tôi kiểm chứng giả thuyết này trên capture 29 bằng cách tam giác hoá đồng thời toàn bộ 42 khung hình có phát hiện chậu cây trong suốt phiên chụp, áp dụng cùng thuật toán loại tia nhiễu lặp đã mô tả ở Mục~\ref{sec:math}.
+
+Kết quả: vị trí tổng hợp từ toàn bộ 42 tia lệch \textbf{\SI{1.25}{\meter}} so với vị trí đáng tin cậy (trung bình hai nhóm A/B, baseline \SIrange{0.86}{0.89}{\meter}) — tệ hơn nhiều so với mức sai lệch \SI{0.047}{\meter} khi chỉ dùng riêng một trong hai nhóm A hoặc B. Đáng chú ý, thuật toán loại tia nhiễu không phát hiện được vấn đề này: không có tia nào bị loại bỏ. Nguyên nhân là do 42 khung hình này phân bố thành hai cụm thời gian có kích thước tương đương nhau — một cụm ở đầu phiên chụp (chưa trôi) và một cụm ở cuối phiên chụp (đã trôi đáng kể) — trong khi thuật toán loại nhiễu dựa trên residual so với trung vị chỉ được thiết kế để loại bỏ một số ít tia lệch cá biệt, không có khả năng nhận diện và loại bỏ toàn bộ một cụm dữ liệu có kích thước tương đương với cụm còn lại.
+
+Phát hiện này củng cố thêm luận điểm chính của bài báo theo một hướng bổ sung quan trọng: \textbf{độ chính xác không đơn thuần tỷ lệ thuận với baseline hay số lượng khung hình sử dụng, mà phụ thuộc vào việc baseline đủ lớn được đạt được trong một cửa sổ thời gian đủ ngắn} để độ trôi tích luỹ (của cả odometry lẫn MapAnything) chưa kịp gây ảnh hưởng đáng kể. Việc gộp dữ liệu một cách không chọn lọc theo thời gian có thể phản tác dụng, bất kể tổng baseline danh nghĩa đạt được lớn đến đâu.
+
+\subsection{Các hướng khắc phục bằng phần cứng đã thử nghiệm và chưa khả thi}
+\label{sec:hw-alternatives}
+
+\begin{itemize}
+    \item \textbf{Định vị tuyệt đối bằng mã ArUco:} Một mã ArUco kích thước thực \SI{15}{\centi\meter} được dán cố định trong phòng làm điểm neo. Tuy nhiên, với camera QVGA độ phân giải thấp, ở khoảng cách trên \SI{2}{\meter} hoặc góc nhìn xiên, thuật toán \texttt{solvePnP} cho sai số định vị \SIrange{0.3}{0.7}{\meter} — lớn ngang hoặc hơn chính độ trôi cần sửa — nên phương án này bị loại bỏ mà không cần nâng cấp phần cứng (mã lớn hơn, camera độ phân giải cao hơn).
+    \item \textbf{Sensor fusion EKF (\texttt{/odometry/filtered}):} Bộ lọc Kalman mở rộng kết hợp IMU đã được kiểm tra nhưng phát hiện hiệp phương sai đã phân kỳ đến giá trị phi vật lý ($\sim 10^{22}$), cho thấy cấu hình bộ lọc hiện tại chưa khả dụng mà không có công việc điều chỉnh sâu hơn.
+\end{itemize}
+
+\subsection{Hạn chế}
+\label{sec:limitations}
+
+Nghiên cứu này dựa trên số lượng phiên chụp còn hạn chế, trong một môi trường phòng đơn và trên một loại đối tượng mục tiêu duy nhất, chưa đủ đa dạng để suy rộng định lượng chính xác (ví dụ vị trí ngưỡng baseline tới hạn chính xác trong khoảng \SIrange{0.08}{0.85}{\meter}, hoặc góc thị sai tối thiểu chính xác cần thiết để tránh suy biến do chuyển động xuyên tâm, trình bày ở Mục~\ref{sec:radial-degeneracy}). Ngưỡng baseline và tiêu chí ``khoảng cách camera--đối tượng ổn định'' nên được hiểu là quy tắc thực nghiệm định hướng (rule of thumb) rút ra từ dữ liệu hiện có, không phải giá trị lý thuyết tối ưu. Việc kiểm tra ba khả năng gây sai số khác — độ phân giải hiệu chỉnh camera không khớp với ảnh chụp thực tế, sai số hệ số tỷ lệ của odometry, và thông số lắp đặt camera ($CAM\_HEIGHT$, $CAM\_FORWARD\_OFFSET$) — đã lần lượt được loại trừ bằng thực nghiệm trực tiếp trong quá trình nghiên cứu, giúp thu hẹp chính xác nguyên nhân về hình học chuyển động; tuy nhiên góc nghiêng (pitch) thực tế của camera so với phương ngang mới chỉ được xác nhận bằng quan sát trực quan, chưa đo đạc bằng thiết bị chuyên dụng. Thực nghiệm bổ sung trên đối tượng mục tiêu là chai nhựa, cùng việc mở rộng số lượng phiên chụp và môi trường thử nghiệm, được xác định là hướng phát triển ưu tiên nhằm kiểm chứng khả năng tổng quát hoá của kết quả. Về dài hạn, việc nâng cấp độ phân giải camera và bổ sung năng lực tính toán tại biên (Mục~\ref{sec:hw-limits}) sẽ mở ra khả năng áp dụng các phương án khắc phục triệt để hơn, như định vị bằng mã ArUco kích thước lớn hơn hoặc tích hợp cơ chế đóng vòng lặp trong quá trình dựng bản đồ.
+
+% =====================================================================
+\section{Kết luận}
+% =====================================================================
+
+Bài báo trình bày một nghiên cứu thực nghiệm định lượng mối quan hệ giữa hình học chuyển động của robot và độ chính xác định vị đối tượng trong bản đồ ba chiều ngữ nghĩa cho robot giao hàng tự hành. Trên 27 cặp so sánh độc lập, sai lệch vị trí giữa hai lần quan sát của cùng một đối tượng giảm từ mức trung bình $\sim$\SI{2.1}{\meter} (khi baseline gần bằng không) xuống còn \SIrange{0.047}{0.500}{\meter} (khi baseline đạt từ \SI{0.85}{\meter} trở lên). Tuy nhiên, một thực nghiệm kiểm chứng bằng số đo thực địa (thước dây, khoảng cách thật \SI{3.00}{\meter}) cho thấy phát hiện quan trọng hơn: \textbf{baseline lớn là điều kiện cần nhưng không đủ}. Bảy lần thử liên tiếp trên cùng một đối tượng cho thấy kết quả tam giác hoá chỉ hội tụ về giá trị thực địa khi robot di chuyển theo \emph{cung tròn quanh đối tượng} (kết quả cuối: \SI{2.97}{\meter}, sai số dưới $1\%$); khi robot di chuyển \emph{xuyên tâm} (tiến/lùi thẳng hướng đối tượng), kết quả bị ước lượng thấp một cách hệ thống dù baseline danh nghĩa tương đương. Từ đó, nghiên cứu đề xuất một tiêu chí chẩn đoán thuần phần mềm, không cần phần cứng bổ sung: theo dõi khoảng cách camera--đối tượng qua từng khung hình trong một lượt quan sát — xu hướng giảm dần đơn điệu là dấu hiệu suy biến hình học đáng tin cậy hơn hẳn bản thân độ lớn baseline. Kết quả này chuyển hoá thành quy tắc thiết kế hành vi robot cụ thể: robot nên được lập trình di chuyển theo cung tròn giữ khoảng cách quan sát ổn định quanh đối tượng mục tiêu, thay vì chỉ xoay tại chỗ hoặc tiến thẳng hướng vào vật. Nghiên cứu cũng ghi nhận một giới hạn cơ bản của kiến trúc dựng ảnh đơn mắt một lượt: sai số tư thế camera trong MapAnything tích luỹ độc lập với sai số của hệ định vị hành trình, gợi ý hướng phát triển tiếp theo là phân tách các phiên thu thập dữ liệu dài thành các đoạn ngắn tự nhất quán về mặt hình học. Cuối cùng, các giới hạn về độ phân giải camera và năng lực tính toán tại biên của nền tảng hiện tại (Mục~\ref{sec:hw-limits}) được xác định là nguyên nhân gốc rễ khiến các phương án khắc phục bằng phần cứng chưa khả thi trong giai đoạn này, và là cơ sở để hoạch định lộ trình nâng cấp trong các nghiên cứu tiếp theo.
+
+\end{document}
