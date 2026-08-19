@@ -46,9 +46,15 @@ def quat_to_R(x, y, z, w):
     ])
 
 
-def semantic_cluster_bearing(cap, coco_class_id, cam_ref_xy, n_sub=30000, eps=0.15, min_samples=15, seed=0):
+def semantic_cluster_bearing(cap, coco_class_id, cam_ref_xy, n_sub=30000, real_eps_m=0.15, min_samples=15, seed=0):
     """Tra ve vector don vi (huong, khong gian that) tu cam_ref_xy den cum
-    diem lon nhat cua lop ngu nghia coco_class_id."""
+    diem lon nhat cua lop ngu nghia coco_class_id.
+
+    eps cho DBSCAN duoc tinh THICH UNG theo scale rieng cua tung capture
+    (eps_raw = real_eps_m / s) - vi don vi khong gian raw cua MapAnything
+    KHONG co ty le co dinh giua cac lan chay (da thay s dao dong tu ~0.02
+    den ~0.18 giua cac capture), dung eps co dinh se lam DBSCAN that bai
+    hoan toan o cac capture co scale nho."""
     from sklearn.cluster import DBSCAN
 
     npz = np.load(f'{BASE}/hawkbot_semantic_output_{cap}/detections.npz')
@@ -57,6 +63,10 @@ def semantic_cluster_bearing(cap, coco_class_id, cam_ref_xy, n_sub=30000, eps=0.
     cls_pts = pts[labels == coco_class_id]
     if len(cls_pts) < min_samples:
         raise ValueError(f'qua it diem cho class {coco_class_id}: {len(cls_pts)}')
+
+    gf = json.load(open(f'{BASE}/global_fit_{cap}.json'))
+    s_g, R_g, t_g = gf['s'], np.array(gf['R']), np.array(gf['t'])
+    eps = real_eps_m / s_g
 
     rng = np.random.default_rng(seed)
     sub = cls_pts if len(cls_pts) <= n_sub else cls_pts[rng.choice(len(cls_pts), size=n_sub, replace=False)]
@@ -69,9 +79,6 @@ def semantic_cluster_bearing(cap, coco_class_id, cam_ref_xy, n_sub=30000, eps=0.
     best = uniq[np.argmax(counts)]
     cluster_pts = sub[cl == best]
     centroid_raw = cluster_pts.mean(axis=0)
-
-    gf = json.load(open(f'{BASE}/global_fit_{cap}.json'))
-    s_g, R_g, t_g = gf['s'], np.array(gf['R']), np.array(gf['t'])
     centroid_xy = s_g * (R_g @ centroid_raw[[0, 2]]) + t_g
 
     direction = centroid_xy - cam_ref_xy
