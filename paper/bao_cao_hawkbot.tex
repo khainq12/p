@@ -31,6 +31,7 @@
 \usepackage{enumitem}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{placeins}
 
 \hypersetup{
     colorlinks=true,
@@ -49,13 +50,13 @@ và khoảng cách đơn-ảnh}}
 \date{\today}
 
 \begin{document}
-\twocolumn[
 \maketitle
+
 \begin{center}
-\rule{\textwidth}{0.5pt}
+\rule{0.9\columnwidth}{0.5pt}
 \end{center}
-{\LARGE\bfseries Tóm tắt\par}
-\vspace{0.4em}
+{\large\bfseries Tóm tắt\par}
+\vspace{0.3em}
 
 Robot giao hàng tự hành hoạt động trong nhà cần một bản đồ ba chiều (3D) có gắn nhãn ngữ nghĩa để nhận biết vị trí đối tượng và mốc tham chiếu. Báo cáo này xây dựng một hệ thống dựng bản đồ như vậy, kết hợp mô hình phát hiện đối tượng \textbf{YOLO11n}, mô hình tái tạo cảnh quan đơn mắt \textbf{MapAnything}, và một \textbf{phương pháp định vị tuyệt đối vị trí đối tượng kết hợp hai tín hiệu độc lập} — không dựa vào phép tam giác hoá tia camera truyền thống vốn nhạy cảm với nhiễu pose odometry của từng khung hình riêng lẻ.
 
@@ -67,11 +68,11 @@ Báo cáo cũng phân tích các giới hạn phần cứng hiện tại của n
 
 \smallskip
 \noindent\textbf{Từ khoá:} bản đồ ba chiều ngữ nghĩa, định vị đối tượng, MapAnything, YOLO, robot giao hàng tự hành, khớp toàn cục Umeyama, khoảng cách đơn-ảnh.
+
 \begin{center}
-\rule{\textwidth}{0.5pt}
+\rule{0.9\columnwidth}{0.5pt}
 \end{center}
 \vspace{0.6em}
-]
 
 % =====================================================================
 \section{Giới thiệu}
@@ -197,6 +198,7 @@ Không đại lượng nào ở trên phụ thuộc pose odometry của một kh
 \caption{Pipeline định vị đối tượng bằng hướng từ cụm điểm ngữ nghĩa MapAnything kết hợp khoảng cách đơn-ảnh.}
 \label{fig:pipeline-new}
 \end{figure*}
+\FloatBarrier
 
 % =====================================================================
 \section{Kết quả thực nghiệm}
