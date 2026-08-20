@@ -338,6 +338,90 @@ Bảy phiên chụp bổ sung (capture 29, 32--36) sau đó được thực hi�
 \textbf{Tiêu chí chẩn đoán thực tế.} Từ quan sát này, chúng tôi đề xuất một tiêu chí bổ sung, không yêu cầu thêm phần cứng hay dữ liệu ground-truth: \textbf{theo dõi khoảng cách camera--đối tượng (ước lượng sơ bộ) qua từng khung hình trong một lượt quan sát}. Một xu hướng giảm dần gần như đơn điệu trong suốt lượt quan sát là dấu hiệu đáng tin cậy của suy biến do chuyển động xuyên tâm, và kết quả tam giác hoá tương ứng nên bị loại bỏ hoặc hạ mức tin cậy, bất kể baseline danh nghĩa đo được lớn đến đâu. Tiêu chí baseline \SI{0.85}{\meter} trình bày ở Mục~\ref{sec:baseline-error} vẫn có giá trị như một điều kiện lọc sơ bộ nhanh, nhưng cần được áp dụng cùng với tiêu chí bổ sung này để đạt độ tin cậy cao.
 
 % =====================================================================
+\section{Định vị bằng hướng từ cụm điểm ngữ nghĩa kết hợp khoảng cách đơn-ảnh}
+\label{sec:semantic-bearing}
+% =====================================================================
+
+Bên cạnh phương pháp tam giác hoá trình bày ở trên, chúng tôi triển khai một phương pháp định vị đối tượng kết hợp hai tín hiệu độc lập:
+
+\begin{itemize}
+    \item \textbf{Hướng (bearing):} xác định từ cụm điểm ngữ nghĩa lớn nhất tương ứng với đối tượng mục tiêu trong bản đồ điểm MapAnything (phân cụm bằng DBSCAN trên các điểm đã gán nhãn lớp), quy đổi sang hệ toạ độ thực bằng một phép khớp toàn cục (Umeyama fit — tỉ lệ, phép xoay, phép tịnh tiến) giữa quỹ đạo camera nội tại của MapAnything và quỹ đạo odometry, tính một lần cho toàn bộ phiên chụp.
+    \item \textbf{Khoảng cách:} ước lượng đơn-ảnh (monocular), tính trực tiếp từ chiều cao bounding box YOLO của một khung hình duy nhất, chiều cao thật đã biết của đối tượng, và tiêu cự camera đã hiệu chỉnh — không sử dụng dữ liệu odometry.
+\end{itemize}
+
+Vị trí cuối cùng của đối tượng được tính bằng vị trí camera tham chiếu cộng với tích của hướng và khoảng cách. Hình~\ref{fig:pipeline-new} minh hoạ toàn bộ pipeline.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{paper_figs/fig_pipeline_final.png}
+\caption{Pipeline định vị đối tượng bằng hướng từ cụm điểm ngữ nghĩa MapAnything kết hợp khoảng cách đơn-ảnh.}
+\label{fig:pipeline-new}
+\end{figure}
+
+Phương pháp được xác thực trên sáu phiên chụp độc lập (capture 36, 46--50), mỗi lần robot quan sát cùng một chậu cây theo một quỹ đạo di chuyển khác nhau. Bảng~\ref{tab:semantic-bearing-results} tổng hợp kết quả, đối chiếu với giá trị đo thực địa bằng thước dây.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả định vị chậu cây qua sáu phiên chụp độc lập}
+\label{tab:semantic-bearing-results}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Capture} & \textbf{Khoảng cách ước lượng} \\
+\midrule
+36 & \SI{2.77}{\meter} \\
+46 & \SI{2.76}{\meter} \\
+47 & \SI{3.13}{\meter} \\
+48 & \SI{3.08}{\meter} \\
+49 & \SI{3.26}{\meter} \\
+50 & \SI{3.12}{\meter} \\
+\midrule
+Trung bình & \SI{3.02}{\meter} \\
+Độ lệch chuẩn & \SI{0.19}{\meter} \\
+\midrule
+\multicolumn{2}{r}{\emph{Giá trị đo thực địa (thước dây):} \textbf{\SI{3.00}{\meter}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Kết quả sáu lần đo hội tụ chặt quanh giá trị đo thực địa, sai số trung bình khoảng $6\%$. Hình~\ref{fig:six-viewers} minh hoạ vị trí đối tượng định vị được (marker xanh lá, kèm khoảng cách ước lượng) cùng quỹ đạo robot (đường đỏ) trên bản đồ điểm đám mây tương ứng của cả sáu phiên chụp.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[t]{0.32\textwidth}
+\includegraphics[width=\textwidth]{paper_figs/paperfig_new36.png}
+\caption{Capture 36 — \SI{2.77}{\meter}}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.32\textwidth}
+\includegraphics[width=\textwidth]{paper_figs/paperfig_new46.png}
+\caption{Capture 46 — \SI{2.76}{\meter}}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.32\textwidth}
+\includegraphics[width=\textwidth]{paper_figs/paperfig_new47.png}
+\caption{Capture 47 — \SI{3.13}{\meter}}
+\end{subfigure}
+
+\vspace{0.6em}
+\begin{subfigure}[t]{0.32\textwidth}
+\includegraphics[width=\textwidth]{paper_figs/paperfig_new48.png}
+\caption{Capture 48 — \SI{3.08}{\meter}}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.32\textwidth}
+\includegraphics[width=\textwidth]{paper_figs/paperfig_new49.png}
+\caption{Capture 49 — \SI{3.26}{\meter}}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.32\textwidth}
+\includegraphics[width=\textwidth]{paper_figs/paperfig_new50.png}
+\caption{Capture 50 — \SI{3.12}{\meter}}
+\end{subfigure}
+\caption{Vị trí chậu cây định vị được (marker xanh lá, nhãn ``Cây'') và quỹ đạo robot (đường đỏ, nhãn ``Xuất phát'' tại điểm bắt đầu) trên bản đồ điểm đám mây MapAnything, cho sáu phiên chụp độc lập.}
+\label{fig:six-viewers}
+\end{figure}
+
+% =====================================================================
 \section{Thảo luận}
 % =====================================================================
 
