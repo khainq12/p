@@ -149,6 +149,14 @@ Các bước xử lý được thực hiện tuần tự cho mỗi phiên chụp
     \item \textbf{Kết hợp:} Vị trí = vị trí camera tham chiếu + hướng $\times$ khoảng cách.
 \end{enumerate}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.8\textwidth]{paper_figs/fig_pipeline_final.png}
+\caption{Pipeline định vị đối tượng bằng hướng từ cụm điểm ngữ nghĩa MapAnything kết hợp khoảng cách đơn-ảnh.}
+\label{fig:pipeline-new}
+\end{figure*}
+\FloatBarrier
+
 Thuật toán~\ref{alg:labeling} mô tả cơ chế gán nhãn ngữ nghĩa cho điểm 3D ở B3 — nền tảng cho việc xác định cụm điểm mục tiêu ở B5.
 
 \begin{algorithm}[H]
@@ -201,14 +209,6 @@ d = \frac{f_y \cdot H}{h_{\text{px}}}, \qquad
 
 Không đại lượng nào ở trên phụ thuộc pose odometry của một khung đơn lẻ ngoài $\mathbf{o}$ (chỉ để neo kết quả) — phép khớp dùng toàn bộ quỹ đạo, khoảng cách hoàn toàn không dùng odometry. Hình~\ref{fig:pipeline-new} tổng hợp trực quan toàn bộ pipeline định vị mô tả ở trên.
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.8\textwidth]{paper_figs/fig_pipeline_final.png}
-\caption{Pipeline định vị đối tượng bằng hướng từ cụm điểm ngữ nghĩa MapAnything kết hợp khoảng cách đơn-ảnh.}
-\label{fig:pipeline-new}
-\end{figure*}
-\FloatBarrier
-
 % =====================================================================
 \section{Kết quả thực nghiệm}
 \label{sec:semantic-bearing}
@@ -232,11 +232,6 @@ Phương pháp được xác thực trên \textbf{sáu phiên chụp độc lậ
 \caption{Quét toàn bộ căn phòng: đối chiếu ảnh thực tế (trái) và bản đồ điểm 3D dựng từ 239 khung hình, nhìn từ trên xuống (phải). Marker vàng đánh dấu tâm cụm điểm lớn nhất của mỗi lớp ngữ nghĩa; đường đỏ là quỹ đạo robot.}
 \label{fig:room-scan}
 \end{figure*}
-\FloatBarrier
-
-\subsection{Kết quả định lượng}
-
-Bảng~\ref{tab:semantic-bearing-results} tổng hợp kết quả cho từng phiên chụp, kèm các chỉ số chất lượng phát hiện/phân cụm hỗ trợ: độ tin cậy phát hiện YOLO tại khung dùng để ước lượng khoảng cách, chiều cao khung bao tương ứng, và số điểm trong cụm ngữ nghĩa lớn nhất được dùng để suy ra hướng.
 
 \begin{table*}[t]
 \centering
@@ -259,6 +254,11 @@ Bảng~\ref{tab:semantic-bearing-results} tổng hợp kết quả cho từng ph
 \bottomrule
 \end{tabular}
 \end{table*}
+\FloatBarrier
+
+\subsection{Kết quả định lượng}
+
+Bảng~\ref{tab:semantic-bearing-results} tổng hợp kết quả cho từng phiên chụp, kèm các chỉ số chất lượng phát hiện/phân cụm hỗ trợ: độ tin cậy phát hiện YOLO tại khung dùng để ước lượng khoảng cách, chiều cao khung bao tương ứng, và số điểm trong cụm ngữ nghĩa lớn nhất được dùng để suy ra hướng.
 
 Cả sáu phiên chụp cho sai lệch tuyệt đối trong khoảng $2$--$9\%$ so với giá trị đo thực địa, không có phiên nào lệch quá \SI{0.26}{\meter}. Đáng chú ý, độ tin cậy phát hiện YOLO dao động khá rộng (0,63--0,90) và số điểm trong cụm ngữ nghĩa luôn ở mức rất cao ($>$29\,700/30\,000 điểm lấy mẫu, tức cụm mục tiêu chiếm hơn 99\% mẫu con) — cho thấy đối tượng được MapAnything tái tạo thành một khối điểm liền mạch, ít bị phân mảnh, bất kể độ tin cậy phát hiện 2D dao động ra sao. Hình~\ref{fig:results-bar} trực quan hoá sai lệch của cả sáu phiên so với đường tham chiếu thực địa.
 
@@ -273,7 +273,14 @@ Cả sáu phiên chụp cho sai lệch tuyệt đối trong khoảng $2$--$9\%$ 
 
 \subsection{Trực quan hoá trên bản đồ điểm}
 
-Hình~\ref{fig:six-viewers} minh hoạ vị trí đối tượng định vị được (marker xanh lá, kèm khoảng cách ước lượng) cùng quỹ đạo robot (đường đỏ) trên bản đồ điểm đám mây tương ứng của cả sáu phiên chụp. Hình~\ref{fig:6cap-3d} tổng hợp cả sáu quỹ đạo và vị trí ước lượng trong một khung nhìn ba chiều duy nhất (mỗi phiên chụp giữ hệ toạ độ riêng, gốc tại điểm xuất phát), cho thấy trực quan mức độ hội tụ của sáu kết quả độc lập quanh cùng một khoảng cách. Hình~\ref{fig:real-photo} đối chiếu môi trường thử nghiệm thực tế với một khung hình cụ thể mà YOLO11n phát hiện được chậu cây.
+Hình~\ref{fig:six-viewers} minh hoạ vị trí đối tượng định vị được (marker xanh lá, kèm khoảng cách ước lượng) cùng quỹ đạo robot (đường đỏ) trên bản đồ điểm đám mây tương ứng của cả sáu phiên chụp. Hình~\ref{fig:6cap-3d} tổng hợp cả sáu quỹ đạo và vị trí ước lượng trong một khung nhìn ba chiều duy nhất (mỗi phiên chụp giữ hệ toạ độ riêng, gốc tại điểm xuất phát), cho thấy trực quan mức độ hội tụ của sáu kết quả độc lập quanh cùng một khoảng cách. Kết quả sáu lần đo hội tụ chặt quanh giá trị đo thực địa, sai số trung bình khoảng $6\%$, không phụ thuộc rõ rệt vào hình dạng quỹ đạo cụ thể của từng phiên (Hình~\ref{fig:6cap-3d}) hay độ tin cậy phát hiện 2D (Bảng~\ref{tab:semantic-bearing-results}) — phù hợp với lập luận ở Mục~\ref{sec:global-fit-stable} rằng độ ổn định của phương pháp đến từ việc tách bạch hai tín hiệu hướng và khoảng cách khỏi pose odometry từng khung. Hình~\ref{fig:real-photo} đối chiếu môi trường thử nghiệm thực tế với một khung hình cụ thể mà YOLO11n phát hiện được chậu cây.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{paper_figs/fig_6captures_3d.png}
+\caption{Quỹ đạo camera (đường liền, ô vuông = điểm xuất phát) và vị trí chậu cây ước lượng (tam giác + đường đứt, cao \SI{1.25}{\meter} — chiều cao thật của cây) của sáu phiên chụp, mỗi phiên trong hệ toạ độ riêng gốc tại điểm xuất phát.}
+\label{fig:6cap-3d}
+\end{figure}
 
 \begin{figure*}[t]
 \centering
@@ -291,8 +298,6 @@ Hình~\ref{fig:six-viewers} minh hoạ vị trí đối tượng định vị đ
 \caption{Môi trường thử nghiệm thực tế (trái): robot Hawkbot (đơn vị hình trụ nhỏ ở giữa sàn) hoạt động trong không gian văn phòng, với chậu cây làm đối tượng mục tiêu chính. Phát hiện YOLO11n trên khung hình ESP32-CAM (phải), độ tin cậy 0,75.}
 \label{fig:real-photo}
 \end{figure*}
-\FloatBarrier
-\FloatBarrier
 
 \begin{figure*}[t]
 \centering
@@ -330,15 +335,6 @@ Hình~\ref{fig:six-viewers} minh hoạ vị trí đối tượng định vị đ
 \label{fig:six-viewers}
 \end{figure*}
 \FloatBarrier
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\columnwidth]{paper_figs/fig_6captures_3d.png}
-\caption{Quỹ đạo camera (đường liền, ô vuông = điểm xuất phát) và vị trí chậu cây ước lượng (tam giác + đường đứt, cao \SI{1.25}{\meter} — chiều cao thật của cây) của sáu phiên chụp, mỗi phiên trong hệ toạ độ riêng gốc tại điểm xuất phát.}
-\label{fig:6cap-3d}
-\end{figure}
-
-Kết quả sáu lần đo hội tụ chặt quanh giá trị đo thực địa, sai số trung bình khoảng $6\%$, không phụ thuộc rõ rệt vào hình dạng quỹ đạo cụ thể của từng phiên (Hình~\ref{fig:6cap-3d}) hay độ tin cậy phát hiện 2D (Bảng~\ref{tab:semantic-bearing-results}) — phù hợp với lập luận ở Mục~\ref{sec:global-fit-stable} rằng độ ổn định của phương pháp đến từ việc tách bạch hai tín hiệu hướng và khoảng cách khỏi pose odometry từng khung.
 
 \subsection{Mở rộng: quét bản đồ ngữ nghĩa toàn phòng}
 \label{sec:room-scan}
