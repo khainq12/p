@@ -308,6 +308,27 @@ Hình~\ref{fig:six-viewers} minh hoạ vị trí đối tượng định vị đ
 
 Kết quả sáu lần đo hội tụ chặt quanh giá trị đo thực địa, sai số trung bình khoảng $6\%$, không phụ thuộc rõ rệt vào hình dạng quỹ đạo cụ thể của từng phiên (Hình~\ref{fig:6cap-3d}) hay độ tin cậy phát hiện 2D (Bảng~\ref{tab:semantic-bearing-results}) — phù hợp với lập luận ở Mục~\ref{sec:global-fit-stable} rằng độ ổn định của phương pháp đến từ việc tách bạch hai tín hiệu hướng và khoảng cách khỏi pose odometry từng khung.
 
+\subsection{Mở rộng: quét bản đồ ngữ nghĩa toàn phòng}
+
+Để kiểm tra khả năng mở rộng của pipeline ngoài kịch bản định vị một vật thể mục tiêu, chúng tôi cho robot đi vòng quanh toàn bộ không gian văn phòng (239 khung hình, thay vì 130 khung tập trung quanh một vật thể như Mục~\ref{sec:semantic-bearing}) và chạy lại toàn bộ pipeline B1--B7 không giới hạn lớp ngữ nghĩa mục tiêu. Kết quả là một bản đồ điểm 3D với \textbf{38,8 triệu điểm}, trong đó YOLO11n gán nhãn cho 12 lớp COCO khác nhau. Hình~\ref{fig:room-scan} đối chiếu ảnh chụp thực tế của căn phòng với bản đồ điểm nhìn từ trên xuống.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[t]{0.48\columnwidth}
+\includegraphics[width=\textwidth]{paper_figs/room_scan_photo.png}
+\caption{Ảnh chụp thực tế}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.48\columnwidth}
+\includegraphics[width=\textwidth]{paper_figs/room_scan_topdown.png}
+\caption{Bản đồ điểm (nhìn từ trên)}
+\end{subfigure}
+\caption{Quét toàn bộ căn phòng: đối chiếu ảnh thực tế (trái) và bản đồ điểm 3D dựng từ 239 khung hình, nhìn từ trên xuống (phải). Marker vàng đánh dấu tâm cụm điểm lớn nhất của mỗi lớp ngữ nghĩa; đường đỏ là quỹ đạo robot.}
+\label{fig:room-scan}
+\end{figure}
+
+Bản đồ tái hiện đúng hình dạng và bố cục nội thất của căn phòng (bàn, ghế, tủ, chậu cây ở đúng vị trí tương đối). Tuy nhiên vì camera QVGA độ phân giải thấp kết hợp YOLO11n (bản nano), một số nhãn phát hiện được là kết quả nhận diện sai — ví dụ ``ô tô'', ``máy bay'', ``đèn giao thông'' hầu như không có mặt thật trong văn phòng — trùng khớp với hạn chế phần cứng đã nêu ở Mục~\ref{sec:hw-limits}. Kết quả này cho thấy pipeline khái quát tốt sang bài toán dựng bản đồ toàn cảnh, dù độ tin cậy gán nhãn ngữ nghĩa vẫn bị giới hạn bởi phần cứng cảm biến hiện tại.
+
 % =====================================================================
 \section{Thảo luận}
 % =====================================================================
