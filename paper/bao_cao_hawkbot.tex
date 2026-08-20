@@ -58,13 +58,9 @@ và khoảng cách đơn-ảnh}}
 {\large\bfseries Tóm tắt\par}
 \vspace{0.3em}
 
-Robot giao hàng tự hành hoạt động trong nhà cần một bản đồ ba chiều (3D) có gắn nhãn ngữ nghĩa để nhận biết vị trí đối tượng và mốc tham chiếu. Báo cáo này xây dựng một hệ thống dựng bản đồ như vậy, kết hợp mô hình phát hiện đối tượng \textbf{YOLO11n}, mô hình tái tạo cảnh quan đơn mắt \textbf{MapAnything}, và một \textbf{phương pháp định vị tuyệt đối vị trí đối tượng kết hợp hai tín hiệu độc lập} — không dựa vào phép tam giác hoá tia camera truyền thống vốn nhạy cảm với nhiễu pose odometry của từng khung hình riêng lẻ.
+Robot giao hàng tự hành hoạt động trong nhà cần một bản đồ ba chiều (3D) có gắn nhãn ngữ nghĩa để định vị đối tượng và mốc tham chiếu. Báo cáo trình bày một hệ thống kết hợp \textbf{YOLO11n}, mô hình tái tạo đơn mắt \textbf{MapAnything}, và một \textbf{phương pháp định vị tuyệt đối kết hợp hai tín hiệu độc lập} — thay cho phép tam giác hoá tia camera truyền thống vốn nhạy cảm với nhiễu pose odometry của từng khung hình riêng lẻ. Tín hiệu \textbf{hướng} suy ra từ cụm điểm ngữ nghĩa của đối tượng (phân cụm DBSCAN), quy đổi sang toạ độ thực bằng một \textbf{phép khớp toàn cục Umeyama} tính một lần cho toàn quỹ đạo; tín hiệu \textbf{khoảng cách đơn-ảnh} ước lượng từ kích thước khung bao trên một khung hình duy nhất, độc lập hoàn toàn với odometry.
 
-Tín hiệu thứ nhất là \textbf{hướng} (bearing), xác định từ cụm điểm ngữ nghĩa lớn nhất của đối tượng mục tiêu trong bản đồ điểm MapAnything (phân cụm bằng DBSCAN), quy đổi sang hệ toạ độ thực bằng một \textbf{phép khớp toàn cục Umeyama} (tỉ lệ, phép xoay, phép tịnh tiến) giữa quỹ đạo camera nội tại của MapAnything và quỹ đạo odometry, tính một lần cho toàn bộ phiên chụp — không phụ thuộc riêng một khung hình nào. Tín hiệu thứ hai là \textbf{khoảng cách đơn-ảnh} (monocular), ước lượng từ kích thước khung bao phát hiện được trên một khung hình duy nhất, kết hợp chiều cao thật đã biết của đối tượng và tiêu cự camera đã hiệu chỉnh — hoàn toàn độc lập với dữ liệu odometry.
-
-Phương pháp được xác thực trên \textbf{sáu phiên chụp độc lập}, mỗi lần robot quan sát cùng một chậu cây theo một quỹ đạo di chuyển khác nhau, đối chiếu với số đo thực địa bằng thước dây. Kết quả định vị dao động trong khoảng \SIrange{2.76}{3.26}{\meter} (trung bình \SI{3.02}{\meter}, độ lệch chuẩn \SI{0.19}{\meter}), khớp sát giá trị đo thực địa (\SI{3.00}{\meter}), \textbf{sai số trung bình khoảng $6\%$}. Phân tích tương quan cho thấy độ chính xác không đến từ độ tin cậy phát hiện 2D hay kích thước cụm điểm, mà từ việc tách bạch cả hai tín hiệu khỏi pose odometry của từng khung hình đơn lẻ.
-
-Báo cáo cũng phân tích các giới hạn phần cứng hiện tại của nền tảng (độ phân giải camera thấp, năng lực tính toán tại biên hạn chế) làm cơ sở cho các lựa chọn thiết kế phương pháp, cùng các hướng phát triển tiếp theo.
+Xác thực trên sáu phiên chụp độc lập, mỗi lần robot quan sát cùng một chậu cây theo một quỹ đạo khác nhau, phương pháp cho kết quả định vị \SIrange{2.76}{3.26}{\meter} (trung bình \SI{3.02}{\meter}, độ lệch chuẩn \SI{0.19}{\meter}), khớp sát giá trị đo thực địa \SI{3.00}{\meter}, \textbf{sai số trung bình khoảng $6\%$} — không phụ thuộc đáng kể vào độ tin cậy phát hiện 2D hay kích thước cụm điểm. Báo cáo cũng phân tích giới hạn phần cứng hiện tại làm cơ sở cho các lựa chọn thiết kế và hướng phát triển tiếp theo.
 
 \smallskip
 \noindent\textbf{Từ khoá:} bản đồ ba chiều ngữ nghĩa, định vị đối tượng, MapAnything, YOLO, robot giao hàng tự hành, khớp toàn cục Umeyama, khoảng cách đơn-ảnh.
@@ -81,6 +77,18 @@ Báo cáo cũng phân tích các giới hạn phần cứng hiện tại của n
 Robot giao hàng tự hành hoạt động trong nhà cần xây dựng và duy trì một bản đồ ba chiều có gắn nhãn ngữ nghĩa (semantic 3D map) nhằm nhận biết vị trí các đối tượng và mốc tham chiếu trong môi trường — ví dụ hàng hoá cần giao, hoặc các vật thể cố định như chậu cây, bàn ghế, dùng làm điểm neo cho việc điều hướng. Một pipeline xử lý điển hình cho bài toán này kết hợp ba thành phần: (i) một mô hình phát hiện đối tượng hai chiều (YOLO) chạy trên từng khung hình camera, (ii) một mô hình tái tạo cảnh quan ba chiều từ ảnh đơn mắt (monocular 3D reconstruction) để khôi phục hình học của không gian, và (iii) một cơ chế xác định vị trí tuyệt đối của đối tượng trong hệ toạ độ thực (đơn vị mét), thường dựa trên dữ liệu định vị hành trình (odometry) của robot.
 
 Việc triển khai một hệ thống định vị đối tượng trong điều kiện thực tế — sử dụng phần cứng chi phí thấp và dữ liệu định vị hành trình (odometry) vốn tích luỹ sai số theo thời gian — đặt ra câu hỏi cốt lõi về việc đâu là yếu tố thực sự chi phối độ chính xác của hệ thống, và làm thế nào để cải thiện độ tin cậy một cách hiệu quả nhất trong giới hạn tài nguyên hiện có. Trong quá trình triển khai thực nghiệm trên nền tảng robot Hawkbot (vận hành trên ROS2 Jazzy) với camera ESP32-CAM, nhóm nghiên cứu nhận thấy rằng các phương pháp định vị phụ thuộc trực tiếp vào pose (vị trí và hướng) odometry của \emph{từng khung hình riêng lẻ} rất nhạy với nhiễu cục bộ. Bài báo này trình bày một phương pháp định vị thay thế, kết hợp \textbf{hướng} suy ra từ cụm điểm ngữ nghĩa của đối tượng trong bản đồ điểm MapAnything với \textbf{khoảng cách} ước lượng đơn-ảnh không phụ thuộc odometry. Phương pháp được xác thực bằng số đo thực địa qua sáu phiên chụp độc lập, cho kết quả ổn định và nhất quán, mở ra một hướng thiết kế pipeline định vị ít nhạy cảm hơn với nhiễu odometry cục bộ, không đòi hỏi đầu tư thêm phần cứng.
+
+% =====================================================================
+\section{Công trình liên quan}
+% =====================================================================
+
+Các hệ thống định vị và dựng bản đồ đồng thời (SLAM) như ORB-SLAM~\cite{orbslam} tối ưu tư thế camera và cấu trúc cảnh quan qua bó điều chỉnh (bundle adjustment) và đóng vòng lặp; các hệ semantic SLAM sau này như Kimera~\cite{kimera} mở rộng thêm bước gán nhãn đối tượng vào bản đồ hình học. Hướng tiếp cận này đòi hỏi tối ưu hoá tư thế trực tuyến, không phù hợp với nền tảng tính toán biên hạn chế của nghiên cứu này (Mục~\ref{sec:hw-limits}).
+
+Phát hiện đối tượng hai chiều làm tín hiệu ngữ nghĩa phổ biến dựa trên họ mô hình YOLO, khởi nguồn từ Redmon và cộng sự~\cite{yolo} và phát triển đến các phiên bản gần đây như YOLO11~\cite{yolo11} dùng trong nghiên cứu này. Đối với tái tạo hình học ba chiều từ ảnh đơn mắt, các mô hình suy luận trực tiếp (feed-forward) như MapAnything~\cite{mapanything} thay thế pipeline SfM/MVS truyền thống bằng một lượt suy luận duy nhất, không cần hiệu chỉnh camera đa góc.
+
+Để quy đổi giữa không gian nội tại của mô hình tái tạo và không gian thực từ odometry, phép khớp Umeyama~\cite{umeyama} là công cụ kinh điển cho bài toán đăng ký điểm cứng (rigid point-set registration) với tỉ lệ chưa biết; DBSCAN~\cite{dbscan} phân cụm điểm dựa trên mật độ mà không cần biết trước số cụm, phù hợp để tách cụm ngữ nghĩa của một đối tượng khỏi nhiễu gán nhãn (Thuật toán~\ref{alg:labeling}).
+
+Khác với các hướng trên, phương pháp trong bài báo này không tối ưu hoá tư thế trực tuyến hay tam giác hoá tia theo từng khung hình, mà tách bạch hoàn toàn tín hiệu hướng (khớp toàn cục hậu kỳ) và khoảng cách (đơn-ảnh) khỏi pose odometry từng khung — phù hợp với ràng buộc xử lý hậu kỳ, phần cứng chi phí thấp của nền tảng Hawkbot.
 
 % =====================================================================
 \section{Phương pháp}
@@ -101,8 +109,8 @@ Robot & Hawkbot, ROS2 Jazzy (container \texttt{hawkbot-bringup}) \\
 Camera & ESP32-CAM, độ phân giải QVGA ($320\times240$ px) \\
 Odometry & \texttt{nav\_msgs/Odometry}, topic \texttt{/odom} \\
 Xử lý & Máy chủ GPU từ xa, kết nối qua mạng nội bộ \\
-Phát hiện & YOLO11n (nano), huấn luyện sẵn trên COCO-80 \\
-Dựng 3D & MapAnything (\texttt{facebook/map-anything}) \\
+Phát hiện & YOLO11n~\cite{yolo,yolo11} (nano), huấn luyện sẵn trên COCO-80 \\
+Dựng 3D & MapAnything~\cite{mapanything} (\texttt{facebook/map-anything}) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,9 +141,9 @@ Các bước xử lý được thực hiện tuần tự cho mỗi phiên chụp
 \begin{enumerate}[label=\textbf{B\arabic*.},leftmargin=*,itemsep=0.15em]
     \item \textbf{Thu thập:} Robot di chuyển tự do, camera chụp liên tục ($\sim$1 khung/giây), ghi vị trí/hướng odometry từng khung vào \texttt{poses.json}.
     \item \textbf{Chọn khung ưu tiên:} Chạy YOLO trên toàn bộ khung gốc, chọn tối đa 130 khung có đối tượng mục tiêu, lấy mẫu đều theo từng lần ghé qua.
-    \item \textbf{Dựng phòng 3D:} Chạy MapAnything trên khung đã chọn, gán nhãn lớp COCO cho từng điểm 3D, tạo bản đồ điểm ngữ nghĩa và quỹ đạo camera nội tại của MapAnything.
+    \item \textbf{Dựng phòng 3D:} Chạy MapAnything~\cite{mapanything} trên khung đã chọn, gán nhãn lớp COCO cho từng điểm 3D, tạo bản đồ điểm ngữ nghĩa và quỹ đạo camera nội tại của MapAnything.
     \item \textbf{Khớp toàn cục:} Umeyama fit giữa quỹ đạo MapAnything và quỹ đạo odometry $\to$ $(s, R, \mathbf{t})$, tính một lần cho cả phiên chụp.
-    \item \textbf{Hướng đối tượng:} Lọc điểm mang nhãn lớp mục tiêu, phân cụm DBSCAN, lấy tâm cụm lớn nhất; áp phép khớp toàn cục để suy ra hướng.
+    \item \textbf{Hướng đối tượng:} Lọc điểm mang nhãn lớp mục tiêu, phân cụm DBSCAN~\cite{dbscan}, lấy tâm cụm lớn nhất; áp phép khớp toàn cục để suy ra hướng.
     \item \textbf{Khoảng cách đối tượng:} Trên một khung duy nhất, ước lượng đơn-ảnh từ chiều cao bbox YOLO, chiều cao thật, tiêu cự camera (\S~\ref{sec:math}).
     \item \textbf{Kết hợp:} Vị trí = vị trí camera tham chiếu + hướng $\times$ khoảng cách.
 \end{enumerate}
@@ -173,7 +181,7 @@ Thuật toán~\ref{alg:labeling} mô tả cơ chế gán nhãn ngữ nghĩa cho 
 \subsection{Công thức}
 \label{sec:math}
 
-\textbf{Khớp toàn cục (Umeyama fit).} Gọi $\{\mathbf{q}_k\}$ là vị trí camera của MapAnything (chiếu xuống mặt phẳng ngang) và $\{\mathbf{p}_k\}$ là vị trí odometry tương ứng. Phép khớp Umeyama tìm $s \in \mathbb{R}$, $R \in SO(2)$, $\mathbf{t}$ tối thiểu hoá:
+\textbf{Khớp toàn cục (Umeyama fit)~\cite{umeyama}.} Gọi $\{\mathbf{q}_k\}$ là vị trí camera của MapAnything (chiếu xuống mặt phẳng ngang) và $\{\mathbf{p}_k\}$ là vị trí odometry tương ứng. Phép khớp Umeyama tìm $s \in \mathbb{R}$, $R \in SO(2)$, $\mathbf{t}$ tối thiểu hoá:
 \begin{equation}
 (s^*, R^*, \mathbf{t}^*) = \operatorname*{arg\,min}_{s, R, \mathbf{t}} \sum_k \left\lVert \mathbf{p}_k - \left(s R \mathbf{q}_k + \mathbf{t}\right) \right\rVert^2
 \end{equation}
@@ -327,5 +335,45 @@ Nghiên cứu dựa trên sáu phiên chụp, một môi trường phòng đơn,
 % =====================================================================
 
 Bài báo trình bày một phương pháp định vị tuyệt đối vị trí đối tượng trong bản đồ ba chiều ngữ nghĩa cho robot giao hàng tự hành, kết hợp hướng suy ra từ cụm điểm ngữ nghĩa (quy đổi bằng phép khớp toàn cục trên toàn bộ quỹ đạo) và khoảng cách đơn-ảnh từ một khung hình duy nhất, hoàn toàn không phụ thuộc odometry. Đặc điểm cốt lõi là không có bước nào đòi hỏi pose của một khung hình đơn lẻ phải chính xác tuyệt đối. Xác thực trên sáu phiên chụp độc lập, phương pháp cho kết quả định vị dao động \SIrange{2.76}{3.26}{\meter} (trung bình \SI{3.02}{\meter}, độ lệch chuẩn \SI{0.19}{\meter}), khớp sát giá trị đo thực địa (\SI{3.00}{\meter}), sai số trung bình khoảng $6\%$. Kết quả cho thấy việc tách bạch tín hiệu hướng (khớp toàn cục ít nhạy nhiễu cục bộ) khỏi tín hiệu khoảng cách (độc lập odometry) là một hướng thiết kế pipeline định vị hiệu quả cho nền tảng phần cứng chi phí thấp. Các giới hạn về độ phân giải camera và năng lực tính toán biên (Mục~\ref{sec:hw-limits}) là cơ sở hoạch định lộ trình nâng cấp và mở rộng phạm vi đối tượng mục tiêu trong các nghiên cứu tiếp theo.
+
+\small
+\begin{thebibliography}{9}
+
+\bibitem{yolo}
+J. Redmon, S. Divvala, R. Girshick, A. Farhadi.
+``You Only Look Once: Unified, Real-Time Object Detection.''
+\textit{Proc. IEEE CVPR}, 2016.
+
+\bibitem{yolo11}
+G. Jocher, A. Chaurasia, J. Qiu.
+\textit{Ultralytics YOLO11}.
+\url{https://github.com/ultralytics/ultralytics}, 2024.
+
+\bibitem{umeyama}
+S. Umeyama.
+``Least-Squares Estimation of Transformation Parameters Between Two Point Patterns.''
+\textit{IEEE Trans. Pattern Analysis and Machine Intelligence}, 13(4):376--380, 1991.
+
+\bibitem{dbscan}
+M. Ester, H.-P. Kriegel, J. Sander, X. Xu.
+``A Density-Based Algorithm for Discovering Clusters in Large Spatial Databases with Noise.''
+\textit{Proc. KDD}, 1996.
+
+\bibitem{orbslam}
+R. Mur-Artal, J. M. M. Montiel, J. D. Tardós.
+``ORB-SLAM: A Versatile and Accurate Monocular SLAM System.''
+\textit{IEEE Trans. Robotics}, 31(5):1147--1163, 2015.
+
+\bibitem{kimera}
+A. Rosinol, M. Abate, Y. Chang, L. Carlone.
+``Kimera: An Open-Source Library for Real-Time Metric-Semantic Localization and Mapping.''
+\textit{Proc. IEEE ICRA}, 2020.
+
+\bibitem{mapanything}
+Meta AI (FAIR).
+\textit{MapAnything: Universal Feed-Forward 3D Reconstruction}.
+\url{https://huggingface.co/facebook/map-anything}, 2025.
+
+\end{thebibliography}
 
 \end{document}
