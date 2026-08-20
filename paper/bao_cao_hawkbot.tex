@@ -83,7 +83,7 @@ Việc triển khai một hệ thống định vị đối tượng trong điề
 \section{Công trình liên quan}
 % =====================================================================
 
-Các hệ thống định vị và dựng bản đồ đồng thời (SLAM) như ORB-SLAM~\cite{orbslam} tối ưu tư thế camera và cấu trúc cảnh quan qua bó điều chỉnh (bundle adjustment) và đóng vòng lặp; các hệ semantic SLAM sau này như Kimera~\cite{kimera} mở rộng thêm bước gán nhãn đối tượng vào bản đồ hình học. Hướng tiếp cận này đòi hỏi tối ưu hoá tư thế trực tuyến, không phù hợp với nền tảng tính toán biên hạn chế của nghiên cứu này (Mục~\ref{sec:hw-limits}).
+Các hệ thống định vị và dựng bản đồ đồng thời (SLAM) như ORB-SLAM~\cite{orbslam} tối ưu tư thế camera và cấu trúc cảnh quan qua bó điều chỉnh (bundle adjustment) và đóng vòng lặp; các hệ semantic SLAM sau này như SemanticFusion~\cite{semanticfusion} và Kimera~\cite{kimera} mở rộng thêm bước gán nhãn đối tượng (qua mạng nơ-ron tích chập) vào bản đồ hình học theo thời gian thực. Hướng tiếp cận này đòi hỏi tối ưu hoá tư thế trực tuyến, không phù hợp với nền tảng tính toán biên hạn chế của nghiên cứu này (Mục~\ref{sec:hw-limits}).
 
 Phát hiện đối tượng hai chiều làm tín hiệu ngữ nghĩa phổ biến dựa trên họ mô hình YOLO, khởi nguồn từ Redmon và cộng sự~\cite{yolo} và phát triển đến các phiên bản gần đây như YOLO11~\cite{yolo11} dùng trong nghiên cứu này. Đối với tái tạo hình học ba chiều từ ảnh đơn mắt, các mô hình suy luận trực tiếp (feed-forward) như MapAnything~\cite{mapanything} thay thế pipeline SfM/MVS truyền thống bằng một lượt suy luận duy nhất, không cần hiệu chỉnh camera đa góc.
 
@@ -106,7 +106,7 @@ Khác với các hướng trên, phương pháp trong bài báo này không tố
 \toprule
 \textbf{Thành phần} & \textbf{Thông số} \\
 \midrule
-Robot & Hawkbot, ROS2 Jazzy (container \texttt{hawkbot-bringup}) \\
+Robot & Hawkbot, ROS2~\cite{ros} Jazzy (container \texttt{hawkbot-bringup}) \\
 Camera & ESP32-CAM, độ phân giải QVGA ($320\times240$ px) \\
 Odometry & \texttt{nav\_msgs/Odometry}, topic \texttt{/odom} \\
 Xử lý & Máy chủ GPU từ xa, kết nối qua mạng nội bộ \\
@@ -139,25 +139,20 @@ Hai giới hạn trên là lý do nghiên cứu này tập trung tìm một \tex
 
 Các bước xử lý được thực hiện tuần tự cho mỗi phiên chụp:
 
+Ba khối xử lý cốt lõi của pipeline là: \textbf{(i) dựng bản đồ 3D} bằng MapAnything (B3), \textbf{(ii) gán nhãn ngữ nghĩa YOLO lên bản đồ 3D} để có đám mây điểm ngữ nghĩa (B4), và \textbf{(iii) ước lượng khoảng cách} đơn-ảnh (B7) — hai tín hiệu (ii) và (iii) sau đó được kết hợp mà không cần tam giác hoá qua nhiều khung hình.
+
 \begin{enumerate}[label=\textbf{B\arabic*.},leftmargin=*,itemsep=0.15em]
     \item \textbf{Thu thập:} Robot di chuyển tự do, camera chụp liên tục ($\sim$1 khung/giây), ghi vị trí/hướng odometry từng khung vào \texttt{poses.json}.
     \item \textbf{Chọn khung ưu tiên:} Chạy YOLO trên toàn bộ khung gốc, chọn tối đa 130 khung có đối tượng mục tiêu, lấy mẫu đều theo từng lần ghé qua.
-    \item \textbf{Dựng phòng 3D:} Chạy MapAnything~\cite{mapanything} trên khung đã chọn, gán nhãn lớp COCO cho từng điểm 3D, tạo bản đồ điểm ngữ nghĩa và quỹ đạo camera nội tại của MapAnything.
+    \item \textbf{Dựng bản đồ 3D:} Chạy MapAnything~\cite{mapanything} trên khung đã chọn, tái tạo đám mây điểm hình học thuần tuý (chưa có nhãn) và quỹ đạo camera nội tại của MapAnything.
+    \item \textbf{Gán nhãn ngữ nghĩa (YOLO $\to$ 3D):} Chạy YOLO trên từng khung, gán nhãn lớp COCO cho mỗi điểm 3D theo khung bao chứa nó (Thuật toán~\ref{alg:labeling}), tạo \emph{đám mây điểm ngữ nghĩa}.
     \item \textbf{Khớp toàn cục:} Umeyama fit giữa quỹ đạo MapAnything và quỹ đạo odometry $\to$ $(s, R, \mathbf{t})$, tính một lần cho cả phiên chụp.
-    \item \textbf{Hướng đối tượng:} Lọc điểm mang nhãn lớp mục tiêu, phân cụm DBSCAN~\cite{dbscan}, lấy tâm cụm lớn nhất; áp phép khớp toàn cục để suy ra hướng.
+    \item \textbf{Hướng đối tượng:} Lọc điểm mang nhãn lớp mục tiêu trong đám mây điểm ngữ nghĩa, phân cụm DBSCAN~\cite{dbscan}, lấy tâm cụm lớn nhất; áp phép khớp toàn cục để suy ra hướng.
     \item \textbf{Khoảng cách đối tượng:} Trên một khung duy nhất, ước lượng đơn-ảnh từ chiều cao bbox YOLO, chiều cao thật, tiêu cự camera (\S~\ref{sec:math}).
     \item \textbf{Kết hợp:} Vị trí = vị trí camera tham chiếu + hướng $\times$ khoảng cách.
 \end{enumerate}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.8\textwidth]{paper_figs/fig_pipeline_final.png}
-\caption{Pipeline định vị đối tượng bằng hướng từ cụm điểm ngữ nghĩa MapAnything kết hợp khoảng cách đơn-ảnh.}
-\label{fig:pipeline-new}
-\end{figure*}
-\FloatBarrier
-
-Thuật toán~\ref{alg:labeling} mô tả cơ chế gán nhãn ngữ nghĩa cho điểm 3D ở B3 — nền tảng cho việc xác định cụm điểm mục tiêu ở B5.
+Thuật toán~\ref{alg:labeling} mô tả cơ chế gán nhãn ngữ nghĩa cho điểm 3D ở B4 — nền tảng cho việc xác định cụm điểm mục tiêu ở B6.
 
 \begin{algorithm}[H]
 \footnotesize
@@ -185,7 +180,7 @@ Thuật toán~\ref{alg:labeling} mô tả cơ chế gán nhãn ngữ nghĩa cho 
 \end{algorithmic}
 \end{algorithm}
 
-\textbf{Hạn chế của cơ chế gán nhãn.} Phép kiểm tra ở dòng 8 chỉ xác định pixel có nằm trong \emph{khung chữ nhật} 2D của YOLO hay không, không phải phân đoạn ngữ nghĩa (segmentation) cấp pixel. Điểm nền hoặc vật thể khác lọt vào khung bao cũng bị gán nhầm nhãn. Đây là lý do bước DBSCAN ở B5 là cần thiết: cụm điểm dày đặc nhất — ứng với vật thể thật, quan sát nhất quán từ nhiều góc — được tách khỏi các điểm nhiễu rải rác.
+\textbf{Hạn chế của cơ chế gán nhãn.} Phép kiểm tra ở dòng 8 chỉ xác định pixel có nằm trong \emph{khung chữ nhật} 2D của YOLO hay không, không phải phân đoạn ngữ nghĩa (segmentation) cấp pixel. Điểm nền hoặc vật thể khác lọt vào khung bao cũng bị gán nhầm nhãn. Đây là lý do bước DBSCAN ở B6 là cần thiết: cụm điểm dày đặc nhất — ứng với vật thể thật, quan sát nhất quán từ nhiều góc — được tách khỏi các điểm nhiễu rải rác.
 
 \subsection{Công thức}
 \label{sec:math}
@@ -207,14 +202,22 @@ d = \frac{f_y \cdot H}{h_{\text{px}}}, \qquad
 \mathbf{x}^* = \mathbf{o} + d \, \hat{\mathbf{b}}
 \end{equation}
 
-Không đại lượng nào ở trên phụ thuộc pose odometry của một khung đơn lẻ ngoài $\mathbf{o}$ (chỉ để neo kết quả) — phép khớp dùng toàn bộ quỹ đạo, khoảng cách hoàn toàn không dùng odometry. Hình~\ref{fig:pipeline-new} tổng hợp trực quan toàn bộ pipeline định vị mô tả ở trên.
+Không đại lượng nào ở trên phụ thuộc pose odometry của một khung đơn lẻ ngoài $\mathbf{o}$ (chỉ để neo kết quả) — phép khớp dùng toàn bộ quỹ đạo, khoảng cách hoàn toàn không dùng odometry. Hình~\ref{fig:pipeline-new} tổng hợp trực quan toàn bộ pipeline định vị mô tả ở trên, gồm đủ ba khối (i) dựng bản đồ 3D, (ii) gán nhãn ngữ nghĩa YOLO, và (iii) ước lượng khoảng cách.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.8\textwidth]{paper_figs/fig_pipeline_final.png}
+\caption{Pipeline định vị đối tượng bằng hướng từ cụm điểm ngữ nghĩa MapAnything kết hợp khoảng cách đơn-ảnh.}
+\label{fig:pipeline-new}
+\end{figure*}
+\FloatBarrier
 
 % =====================================================================
 \section{Kết quả thực nghiệm}
 \label{sec:semantic-bearing}
 % =====================================================================
 
-Phương pháp được xác thực trên \textbf{sáu phiên chụp độc lập} (đánh số 1--6 trong bài báo này), mỗi lần robot quan sát cùng một chậu cây theo một quỹ đạo di chuyển khác nhau, đối chiếu với giá trị đo thực địa bằng thước dây (\SI{3.00}{\meter}). Hình~\ref{fig:room-scan} minh hoạ trước môi trường thử nghiệm qua một lần quét mở rộng toàn bộ căn phòng (chi tiết ở Mục~\ref{sec:room-scan}); Hình~\ref{fig:real-photo} ở phần sau đối chiếu ảnh môi trường với một khung hình YOLO phát hiện chậu cây.
+Với mỗi phiên chụp, ba khối xử lý ở Mục~\ref{sec:math} được thực hiện tuần tự: \textbf{(i)} dựng bản đồ 3D thuần hình học bằng MapAnything, \textbf{(ii)} gán nhãn YOLO lên từng điểm 3D để có đám mây điểm ngữ nghĩa, và \textbf{(iii)} ước lượng khoảng cách đơn-ảnh — hai tín hiệu hướng (suy ra từ (ii)) và khoảng cách (từ (iii)) sau đó được kết hợp thành vị trí tuyệt đối. Phương pháp được xác thực trên \textbf{sáu phiên chụp độc lập} (đánh số 1--6 trong bài báo này), mỗi lần robot quan sát cùng một chậu cây theo một quỹ đạo di chuyển khác nhau, đối chiếu với giá trị đo thực địa bằng thước dây (\SI{3.00}{\meter}). Hình~\ref{fig:room-scan} minh hoạ trước môi trường thử nghiệm qua một lần quét mở rộng toàn bộ căn phòng, chỉ dừng ở bước (i)--(ii) (không lọc một lớp mục tiêu để tính khoảng cách/hướng — chi tiết ở Mục~\ref{sec:room-scan}); Hình~\ref{fig:real-photo} ở phần sau đối chiếu ảnh môi trường với một khung hình YOLO phát hiện chậu cây.
 
 \begin{figure*}[t]
 \centering
@@ -339,7 +342,7 @@ Hình~\ref{fig:six-viewers} minh hoạ vị trí đối tượng định vị đ
 \subsection{Mở rộng: quét bản đồ ngữ nghĩa toàn phòng}
 \label{sec:room-scan}
 
-Để kiểm tra khả năng mở rộng của pipeline ngoài kịch bản định vị một vật thể mục tiêu, chúng tôi cho robot đi vòng quanh toàn bộ không gian văn phòng (239 khung hình, thay vì 130 khung tập trung quanh một vật thể như Mục~\ref{sec:semantic-bearing}) và chạy lại toàn bộ pipeline B1--B7 không giới hạn lớp ngữ nghĩa mục tiêu. Kết quả là một bản đồ điểm 3D với \textbf{38,8 triệu điểm}, trong đó YOLO11n gán nhãn cho 12 lớp COCO khác nhau. Hình~\ref{fig:room-scan} (Mục~\ref{sec:semantic-bearing}) đối chiếu ảnh chụp thực tế của căn phòng với bản đồ điểm nhìn từ trên xuống.
+Để kiểm tra khả năng mở rộng của pipeline ngoài kịch bản định vị một vật thể mục tiêu, chúng tôi cho robot đi vòng quanh toàn bộ không gian văn phòng (239 khung hình, thay vì 130 khung tập trung quanh một vật thể như Mục~\ref{sec:semantic-bearing}) và chạy lại toàn bộ pipeline B1--B8 không giới hạn lớp ngữ nghĩa mục tiêu — tức vẫn (i) dựng bản đồ 3D bằng MapAnything, rồi (ii) gán nhãn YOLO lên từng điểm 3D để có đám mây điểm ngữ nghĩa, chỉ khác là không lọc theo một lớp mục tiêu duy nhất ở bước (iii) ước lượng khoảng cách/hướng. Kết quả là một bản đồ điểm 3D với \textbf{38,8 triệu điểm}, trong đó YOLO11n gán nhãn cho 12 lớp COCO khác nhau. Hình~\ref{fig:room-scan} (Mục~\ref{sec:semantic-bearing}) đối chiếu ảnh chụp thực tế của căn phòng với bản đồ điểm nhìn từ trên xuống.
 
 Bản đồ tái hiện đúng hình dạng và bố cục nội thất của căn phòng (bàn, ghế, tủ, chậu cây ở đúng vị trí tương đối). Tuy nhiên vì camera QVGA độ phân giải thấp kết hợp YOLO11n (bản nano), một số nhãn phát hiện được là kết quả nhận diện sai — ví dụ ``ô tô'', ``máy bay'', ``đèn giao thông'' hầu như không có mặt thật trong văn phòng — trùng khớp với hạn chế phần cứng đã nêu ở Mục~\ref{sec:hw-limits}. Kết quả này cho thấy pipeline khái quát tốt sang bài toán dựng bản đồ toàn cảnh, dù độ tin cậy gán nhãn ngữ nghĩa vẫn bị giới hạn bởi phần cứng cảm biến hiện tại.
 
@@ -403,6 +406,16 @@ R. Mur-Artal, J. M. M. Montiel, J. D. Tardós.
 A. Rosinol, M. Abate, Y. Chang, L. Carlone.
 ``Kimera: An Open-Source Library for Real-Time Metric-Semantic Localization and Mapping.''
 \textit{Proc. IEEE ICRA}, 2020.
+
+\bibitem{semanticfusion}
+J. McCormac, A. Handa, A. Davison, S. Leutenegger.
+``SemanticFusion: Dense 3D Semantic Mapping with Convolutional Neural Networks.''
+\textit{Proc. IEEE ICRA}, 2017.
+
+\bibitem{ros}
+M. Quigley, K. Conley, B. Gerkey, J. Faust, T. Foote, J. Leibs, R. Wheeler, A. Y. Ng.
+``ROS: an open-source Robot Operating System.''
+\textit{ICRA Workshop on Open Source Software}, 2009.
 
 \bibitem{mapanything}
 Meta AI (FAIR).
