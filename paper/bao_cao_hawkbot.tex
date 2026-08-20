@@ -51,12 +51,25 @@ và khoảng cách đơn-ảnh}}
 \begin{document}
 \twocolumn[
 \maketitle
-\begin{abstract}
-Bài báo trình bày một hệ thống dựng bản đồ ba chiều (3D) có gắn nhãn ngữ nghĩa cho robot giao hàng tự hành hoạt động trong nhà, kết hợp mô hình phát hiện đối tượng YOLO11n, mô hình tái tạo cảnh quan đơn mắt (monocular reconstruction) MapAnything, và một phương pháp định vị tuyệt đối vị trí đối tượng kết hợp hai tín hiệu độc lập. Tín hiệu thứ nhất là \emph{hướng} (bearing), xác định từ cụm điểm ngữ nghĩa lớn nhất tương ứng với đối tượng mục tiêu trong bản đồ điểm MapAnything (phân cụm bằng DBSCAN trên các điểm đã gán nhãn lớp), quy đổi sang hệ toạ độ thực bằng một phép khớp toàn cục (Umeyama fit — tỉ lệ, phép xoay, phép tịnh tiến) giữa quỹ đạo camera nội tại của MapAnything và quỹ đạo định vị hành trình (odometry) của robot, tính một lần cho toàn bộ phiên chụp. Tín hiệu thứ hai là \emph{khoảng cách}, ước lượng đơn-ảnh (monocular) từ kích thước khung bao (bounding box) phát hiện được trên một khung hình duy nhất, kết hợp chiều cao thật đã biết của đối tượng và tiêu cự camera đã hiệu chỉnh — hoàn toàn không phụ thuộc dữ liệu odometry. Phương pháp được xác thực trên sáu phiên chụp độc lập, mỗi lần robot quan sát cùng một đối tượng mục tiêu (một chậu cây cố định) theo một quỹ đạo di chuyển khác nhau: kết quả định vị dao động trong khoảng \SIrange{2.76}{3.26}{\meter} (trung bình \SI{3.02}{\meter}, độ lệch chuẩn \SI{0.19}{\meter}), khớp sát với giá trị đo thực địa bằng thước dây (\SI{3.00}{\meter}), sai số trung bình khoảng $6\%$. Đặc điểm cốt lõi giúp phương pháp ổn định qua nhiều lần lặp lại là: không có bước nào trong quy trình định vị đòi hỏi pose (vị trí và hướng) của một khung hình đơn lẻ phải chính xác tuyệt đối. Bài báo cũng phân tích các giới hạn phần cứng hiện tại của nền tảng làm cơ sở cho các lựa chọn thiết kế phương pháp, cùng các hướng phát triển tiếp theo.
+\begin{center}
+\rule{\textwidth}{0.5pt}
+\end{center}
+{\LARGE\bfseries Tóm tắt\par}
+\vspace{0.4em}
+
+Robot giao hàng tự hành hoạt động trong nhà cần một bản đồ ba chiều (3D) có gắn nhãn ngữ nghĩa để nhận biết vị trí đối tượng và mốc tham chiếu. Báo cáo này xây dựng một hệ thống dựng bản đồ như vậy, kết hợp mô hình phát hiện đối tượng \textbf{YOLO11n}, mô hình tái tạo cảnh quan đơn mắt \textbf{MapAnything}, và một \textbf{phương pháp định vị tuyệt đối vị trí đối tượng kết hợp hai tín hiệu độc lập} — không dựa vào phép tam giác hoá tia camera truyền thống vốn nhạy cảm với nhiễu pose odometry của từng khung hình riêng lẻ.
+
+Tín hiệu thứ nhất là \textbf{hướng} (bearing), xác định từ cụm điểm ngữ nghĩa lớn nhất của đối tượng mục tiêu trong bản đồ điểm MapAnything (phân cụm bằng DBSCAN), quy đổi sang hệ toạ độ thực bằng một \textbf{phép khớp toàn cục Umeyama} (tỉ lệ, phép xoay, phép tịnh tiến) giữa quỹ đạo camera nội tại của MapAnything và quỹ đạo odometry, tính một lần cho toàn bộ phiên chụp — không phụ thuộc riêng một khung hình nào. Tín hiệu thứ hai là \textbf{khoảng cách đơn-ảnh} (monocular), ước lượng từ kích thước khung bao phát hiện được trên một khung hình duy nhất, kết hợp chiều cao thật đã biết của đối tượng và tiêu cự camera đã hiệu chỉnh — hoàn toàn độc lập với dữ liệu odometry.
+
+Phương pháp được xác thực trên \textbf{sáu phiên chụp độc lập}, mỗi lần robot quan sát cùng một chậu cây theo một quỹ đạo di chuyển khác nhau, đối chiếu với số đo thực địa bằng thước dây. Kết quả định vị dao động trong khoảng \SIrange{2.76}{3.26}{\meter} (trung bình \SI{3.02}{\meter}, độ lệch chuẩn \SI{0.19}{\meter}), khớp sát giá trị đo thực địa (\SI{3.00}{\meter}), \textbf{sai số trung bình khoảng $6\%$}. Phân tích tương quan cho thấy độ chính xác không đến từ độ tin cậy phát hiện 2D hay kích thước cụm điểm, mà từ việc tách bạch cả hai tín hiệu khỏi pose odometry của từng khung hình đơn lẻ.
+
+Báo cáo cũng phân tích các giới hạn phần cứng hiện tại của nền tảng (độ phân giải camera thấp, năng lực tính toán tại biên hạn chế) làm cơ sở cho các lựa chọn thiết kế phương pháp, cùng các hướng phát triển tiếp theo.
 
 \smallskip
 \noindent\textbf{Từ khoá:} bản đồ ba chiều ngữ nghĩa, định vị đối tượng, MapAnything, YOLO, robot giao hàng tự hành, khớp toàn cục Umeyama, khoảng cách đơn-ảnh.
-\end{abstract}
+\begin{center}
+\rule{\textwidth}{0.5pt}
+\end{center}
 \vspace{0.6em}
 ]
 
@@ -102,13 +115,6 @@ K = \begin{bmatrix}
 \end{bmatrix}
 \label{tab:intrinsics}
 \]
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\columnwidth]{paper_figs/anh_thuc_te.jpg}
-\caption{Môi trường thử nghiệm thực tế: robot Hawkbot (đơn vị hình trụ nhỏ ở giữa sàn) hoạt động trong không gian văn phòng, với chậu cây làm đối tượng mục tiêu chính.}
-\label{fig:real-photo}
-\end{figure}
 
 \subsection{Hạn chế của nền tảng phần cứng hiện tại}
 \label{sec:hw-limits}
@@ -183,14 +189,7 @@ d = \frac{f_y \cdot H}{h_{\text{px}}}, \qquad
 \mathbf{x}^* = \mathbf{o} + d \, \hat{\mathbf{b}}
 \end{equation}
 
-Không đại lượng nào ở trên phụ thuộc pose odometry của một khung đơn lẻ ngoài $\mathbf{o}$ (chỉ để neo kết quả) — phép khớp dùng toàn bộ quỹ đạo, khoảng cách hoàn toàn không dùng odometry.
-
-% =====================================================================
-\section{Kết quả thực nghiệm}
-\label{sec:semantic-bearing}
-% =====================================================================
-
-Hình~\ref{fig:pipeline-new} minh hoạ toàn bộ pipeline định vị. Phương pháp được xác thực trên \textbf{sáu phiên chụp độc lập} (đánh số 1--6 trong bài báo này), mỗi lần robot quan sát cùng một chậu cây theo một quỹ đạo di chuyển khác nhau, đối chiếu với giá trị đo thực địa bằng thước dây (\SI{3.00}{\meter}).
+Không đại lượng nào ở trên phụ thuộc pose odometry của một khung đơn lẻ ngoài $\mathbf{o}$ (chỉ để neo kết quả) — phép khớp dùng toàn bộ quỹ đạo, khoảng cách hoàn toàn không dùng odometry. Hình~\ref{fig:pipeline-new} tổng hợp trực quan toàn bộ pipeline định vị mô tả ở trên.
 
 \begin{figure*}[t]
 \centering
@@ -198,6 +197,20 @@ Hình~\ref{fig:pipeline-new} minh hoạ toàn bộ pipeline định vị. Phươ
 \caption{Pipeline định vị đối tượng bằng hướng từ cụm điểm ngữ nghĩa MapAnything kết hợp khoảng cách đơn-ảnh.}
 \label{fig:pipeline-new}
 \end{figure*}
+
+% =====================================================================
+\section{Kết quả thực nghiệm}
+\label{sec:semantic-bearing}
+% =====================================================================
+
+Phương pháp được xác thực trên \textbf{sáu phiên chụp độc lập} (đánh số 1--6 trong bài báo này), mỗi lần robot quan sát cùng một chậu cây theo một quỹ đạo di chuyển khác nhau, đối chiếu với giá trị đo thực địa bằng thước dây (\SI{3.00}{\meter}). Hình~\ref{fig:real-photo} chụp trực tiếp môi trường thử nghiệm thực tế.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{paper_figs/anh_thuc_te.jpg}
+\caption{Môi trường thử nghiệm thực tế: robot Hawkbot (đơn vị hình trụ nhỏ ở giữa sàn) hoạt động trong không gian văn phòng, với chậu cây làm đối tượng mục tiêu chính.}
+\label{fig:real-photo}
+\end{figure}
 
 \subsection{Kết quả định lượng}
 
