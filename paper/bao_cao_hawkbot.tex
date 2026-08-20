@@ -29,6 +29,8 @@
 \usepackage{hyperref}
 \usepackage{float}
 \usepackage{enumitem}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 \hypersetup{
     colorlinks=true,
@@ -130,6 +132,35 @@ Các bước xử lý được thực hiện tuần tự cho mỗi phiên chụp
     \item \textbf{Xác định khoảng cách đối tượng:} Trên một khung hình duy nhất có phát hiện đối tượng, ước lượng khoảng cách đơn-ảnh từ chiều cao khung bao YOLO, chiều cao thật đã biết của đối tượng, và tiêu cự camera (\S~\ref{sec:math}) — độc lập hoàn toàn với odometry.
     \item \textbf{Kết hợp:} Vị trí đối tượng = vị trí camera tham chiếu + hướng $\times$ khoảng cách.
 \end{enumerate}
+
+Thuật toán~\ref{alg:labeling} mô tả chi tiết cơ chế gán nhãn ngữ nghĩa cho điểm 3D ở Bước~3 — bước nền tảng cho việc xác định cụm điểm mục tiêu ở Bước~5.
+
+\begin{algorithm}[H]
+\caption{Gán nhãn ngữ nghĩa cho đám mây điểm 3D}
+\label{alg:labeling}
+\begin{algorithmic}[1]
+\Require Tập khung hình đã chọn $\{I_1, \dots, I_n\}$; mô hình MapAnything $\mathcal{M}$; mô hình YOLO $\mathcal{Y}$
+\Ensure Đám mây điểm có nhãn $\mathcal{P} = \{(\mathbf{x}_j, l_j)\}$
+\State $\mathcal{P} \gets \emptyset$
+\For{$i \gets 1$ \textbf{to} $n$}
+    \State $(D_i, K_i, T_i, M_i) \gets \mathcal{M}(I_i)$ \Comment{độ sâu, nội tại, pose camera, mặt nạ điểm hợp lệ}
+    \State $\mathbf{P}_i \gets \textsc{DepthToWorld}(D_i, K_i, T_i)$ \Comment{toạ độ 3D cho từng pixel, kích thước $H \times W$}
+    \State $B_i \gets \mathcal{Y}(I_i)$ \Comment{danh sách $(l, \text{bbox}, \text{conf})$ từ YOLO, đã lọc theo ngưỡng conf}
+    \For{mỗi pixel $(u, v)$ với $M_i(u, v) = \text{true}$}
+        \State $l \gets -1$ \Comment{mặc định: nền, không thuộc lớp nào}
+        \For{mỗi $(l', \text{bbox}, \text{conf}) \in B_i$}
+            \If{$(u, v) \in \text{bbox}$} \Comment{kiểm tra pixel nằm trong khung bao 2D}
+                \State $l \gets l'$; \textbf{break}
+            \EndIf
+        \EndFor
+        \State $\mathcal{P} \gets \mathcal{P} \cup \{(\mathbf{P}_i(u, v),\ l)\}$
+    \EndFor
+\EndFor
+\State \Return $\mathcal{P}$
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Lưu ý về hạn chế của cơ chế gán nhãn.} Phép kiểm tra ở dòng 8 (Thuật toán~\ref{alg:labeling}) chỉ xác định pixel có nằm trong \emph{khung chữ nhật} 2D của YOLO hay không — đây không phải một mô hình phân đoạn ngữ nghĩa (semantic segmentation) thực thụ ở cấp độ pixel. Do khung bao là hình chữ nhật bao quanh vật thể, các điểm nền hoặc vật thể khác nằm lọt vào bên trong khung bao (ví dụ khoảng trống phía sau đối tượng, hoặc mép của vật thể lân cận) cũng bị gán nhầm nhãn của đối tượng mục tiêu. Đây chính là lý do bước phân cụm DBSCAN ở Bước~5 là cần thiết: trong tập điểm đã gán nhãn (có lẫn nhiễu), cụm điểm dày đặc nhất — ứng với bản thân vật thể thật, được quan sát nhất quán từ nhiều góc nhìn — được tách ra khỏi các điểm nhiễu rải rác bị gán nhầm nhãn theo cơ chế hình chữ nhật này.
 
 \subsection{Công thức}
 \label{sec:math}
