@@ -214,14 +214,25 @@ Không đại lượng nào ở trên phụ thuộc pose odometry của một kh
 \label{sec:semantic-bearing}
 % =====================================================================
 
-Phương pháp được xác thực trên \textbf{sáu phiên chụp độc lập} (đánh số 1--6 trong bài báo này), mỗi lần robot quan sát cùng một chậu cây theo một quỹ đạo di chuyển khác nhau, đối chiếu với giá trị đo thực địa bằng thước dây (\SI{3.00}{\meter}). Hình~\ref{fig:real-photo} chụp trực tiếp môi trường thử nghiệm thực tế.
+Phương pháp được xác thực trên \textbf{sáu phiên chụp độc lập} (đánh số 1--6 trong bài báo này), mỗi lần robot quan sát cùng một chậu cây theo một quỹ đạo di chuyển khác nhau, đối chiếu với giá trị đo thực địa bằng thước dây (\SI{3.00}{\meter}). Hình~\ref{fig:room-scan} minh hoạ trước môi trường thử nghiệm qua một lần quét mở rộng toàn bộ căn phòng (chi tiết ở Mục~\ref{sec:room-scan}); Hình~\ref{fig:real-photo} ở phần sau đối chiếu ảnh môi trường với một khung hình YOLO phát hiện chậu cây.
 
-\begin{figure}[H]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{paper_figs/anh_thuc_te.jpg}
-\caption{Môi trường thử nghiệm thực tế: robot Hawkbot (đơn vị hình trụ nhỏ ở giữa sàn) hoạt động trong không gian văn phòng, với chậu cây làm đối tượng mục tiêu chính.}
-\label{fig:real-photo}
-\end{figure}
+\begin{subfigure}[b]{0.46\textwidth}
+\centering
+\includegraphics[height=6.0cm,keepaspectratio]{paper_figs/room_scan_photo.png}
+\caption{Ảnh chụp thực tế}
+\end{subfigure}
+\hspace{1em}
+\begin{subfigure}[b]{0.46\textwidth}
+\centering
+\includegraphics[height=6.0cm,keepaspectratio]{paper_figs/room_scan_topdown.png}
+\caption{Bản đồ điểm (nhìn từ trên, cùng hướng với ảnh thực tế)}
+\end{subfigure}
+\caption{Quét toàn bộ căn phòng: đối chiếu ảnh thực tế (trái) và bản đồ điểm 3D dựng từ 239 khung hình, nhìn từ trên xuống (phải). Marker vàng đánh dấu tâm cụm điểm lớn nhất của mỗi lớp ngữ nghĩa; đường đỏ là quỹ đạo robot.}
+\label{fig:room-scan}
+\end{figure*}
+\FloatBarrier
 
 \subsection{Kết quả định lượng}
 
@@ -262,7 +273,25 @@ Cả sáu phiên chụp cho sai lệch tuyệt đối trong khoảng $2$--$9\%$ 
 
 \subsection{Trực quan hoá trên bản đồ điểm}
 
-Hình~\ref{fig:six-viewers} minh hoạ vị trí đối tượng định vị được (marker xanh lá, kèm khoảng cách ước lượng) cùng quỹ đạo robot (đường đỏ) trên bản đồ điểm đám mây tương ứng của cả sáu phiên chụp. Hình~\ref{fig:6cap-3d} tổng hợp cả sáu quỹ đạo và vị trí ước lượng trong một khung nhìn ba chiều duy nhất (mỗi phiên chụp giữ hệ toạ độ riêng, gốc tại điểm xuất phát), cho thấy trực quan mức độ hội tụ của sáu kết quả độc lập quanh cùng một khoảng cách.
+Hình~\ref{fig:six-viewers} minh hoạ vị trí đối tượng định vị được (marker xanh lá, kèm khoảng cách ước lượng) cùng quỹ đạo robot (đường đỏ) trên bản đồ điểm đám mây tương ứng của cả sáu phiên chụp. Hình~\ref{fig:6cap-3d} tổng hợp cả sáu quỹ đạo và vị trí ước lượng trong một khung nhìn ba chiều duy nhất (mỗi phiên chụp giữ hệ toạ độ riêng, gốc tại điểm xuất phát), cho thấy trực quan mức độ hội tụ của sáu kết quả độc lập quanh cùng một khoảng cách. Hình~\ref{fig:real-photo} đối chiếu môi trường thử nghiệm thực tế với một khung hình cụ thể mà YOLO11n phát hiện được chậu cây.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\columnwidth}
+\centering
+\includegraphics[width=\textwidth]{paper_figs/anh_thuc_te.jpg}
+\caption{Môi trường thử nghiệm}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\columnwidth}
+\centering
+\includegraphics[width=\textwidth]{paper_figs/fig_yolo_detection.png}
+\caption{YOLO11n phát hiện chậu cây}
+\end{subfigure}
+\caption{Môi trường thử nghiệm thực tế (trái): robot Hawkbot (đơn vị hình trụ nhỏ ở giữa sàn) hoạt động trong không gian văn phòng, với chậu cây làm đối tượng mục tiêu chính. Phát hiện YOLO11n trên khung hình ESP32-CAM (phải), độ tin cậy 0,75--0,80.}
+\label{fig:real-photo}
+\end{figure}
+\FloatBarrier
 
 \begin{figure*}[t]
 \centering
@@ -299,6 +328,7 @@ Hình~\ref{fig:six-viewers} minh hoạ vị trí đối tượng định vị đ
 \caption{Vị trí chậu cây định vị được (marker xanh lá, nhãn ``Cây'') và quỹ đạo robot (đường đỏ, nhãn ``Xuất phát'' tại điểm bắt đầu) trên bản đồ điểm đám mây MapAnything, cho sáu phiên chụp độc lập.}
 \label{fig:six-viewers}
 \end{figure*}
+\FloatBarrier
 
 \begin{figure}[H]
 \centering
@@ -310,26 +340,9 @@ Hình~\ref{fig:six-viewers} minh hoạ vị trí đối tượng định vị đ
 Kết quả sáu lần đo hội tụ chặt quanh giá trị đo thực địa, sai số trung bình khoảng $6\%$, không phụ thuộc rõ rệt vào hình dạng quỹ đạo cụ thể của từng phiên (Hình~\ref{fig:6cap-3d}) hay độ tin cậy phát hiện 2D (Bảng~\ref{tab:semantic-bearing-results}) — phù hợp với lập luận ở Mục~\ref{sec:global-fit-stable} rằng độ ổn định của phương pháp đến từ việc tách bạch hai tín hiệu hướng và khoảng cách khỏi pose odometry từng khung.
 
 \subsection{Mở rộng: quét bản đồ ngữ nghĩa toàn phòng}
+\label{sec:room-scan}
 
-Để kiểm tra khả năng mở rộng của pipeline ngoài kịch bản định vị một vật thể mục tiêu, chúng tôi cho robot đi vòng quanh toàn bộ không gian văn phòng (239 khung hình, thay vì 130 khung tập trung quanh một vật thể như Mục~\ref{sec:semantic-bearing}) và chạy lại toàn bộ pipeline B1--B7 không giới hạn lớp ngữ nghĩa mục tiêu. Kết quả là một bản đồ điểm 3D với \textbf{38,8 triệu điểm}, trong đó YOLO11n gán nhãn cho 12 lớp COCO khác nhau. Hình~\ref{fig:room-scan} đối chiếu ảnh chụp thực tế của căn phòng với bản đồ điểm nhìn từ trên xuống.
-
-\begin{figure*}[t]
-\centering
-\begin{subfigure}[b]{0.46\textwidth}
-\centering
-\includegraphics[height=6.0cm,keepaspectratio]{paper_figs/room_scan_photo.png}
-\caption{Ảnh chụp thực tế}
-\end{subfigure}
-\hspace{1em}
-\begin{subfigure}[b]{0.46\textwidth}
-\centering
-\includegraphics[height=6.0cm,keepaspectratio]{paper_figs/room_scan_topdown.png}
-\caption{Bản đồ điểm (nhìn từ trên, cùng hướng với ảnh thực tế)}
-\end{subfigure}
-\caption{Quét toàn bộ căn phòng: đối chiếu ảnh thực tế (trái) và bản đồ điểm 3D dựng từ 239 khung hình, nhìn từ trên xuống (phải). Marker vàng đánh dấu tâm cụm điểm lớn nhất của mỗi lớp ngữ nghĩa; đường đỏ là quỹ đạo robot.}
-\label{fig:room-scan}
-\end{figure*}
-\FloatBarrier
+Để kiểm tra khả năng mở rộng của pipeline ngoài kịch bản định vị một vật thể mục tiêu, chúng tôi cho robot đi vòng quanh toàn bộ không gian văn phòng (239 khung hình, thay vì 130 khung tập trung quanh một vật thể như Mục~\ref{sec:semantic-bearing}) và chạy lại toàn bộ pipeline B1--B7 không giới hạn lớp ngữ nghĩa mục tiêu. Kết quả là một bản đồ điểm 3D với \textbf{38,8 triệu điểm}, trong đó YOLO11n gán nhãn cho 12 lớp COCO khác nhau. Hình~\ref{fig:room-scan} (Mục~\ref{sec:semantic-bearing}) đối chiếu ảnh chụp thực tế của căn phòng với bản đồ điểm nhìn từ trên xuống.
 
 Bản đồ tái hiện đúng hình dạng và bố cục nội thất của căn phòng (bàn, ghế, tủ, chậu cây ở đúng vị trí tương đối). Tuy nhiên vì camera QVGA độ phân giải thấp kết hợp YOLO11n (bản nano), một số nhãn phát hiện được là kết quả nhận diện sai — ví dụ ``ô tô'', ``máy bay'', ``đèn giao thông'' hầu như không có mặt thật trong văn phòng — trùng khớp với hạn chế phần cứng đã nêu ở Mục~\ref{sec:hw-limits}. Kết quả này cho thấy pipeline khái quát tốt sang bài toán dựng bản đồ toàn cảnh, dù độ tin cậy gán nhãn ngữ nghĩa vẫn bị giới hạn bởi phần cứng cảm biến hiện tại.
 
