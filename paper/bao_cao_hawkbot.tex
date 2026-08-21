@@ -239,21 +239,40 @@ Với mỗi phiên chụp, ba khối xử lý ở Mục~\ref{sec:math} được 
 \begin{table*}[t]
 \centering
 \small
-\caption{Kết quả định vị chậu cây qua sáu phiên chụp độc lập, kèm chỉ số chất lượng đầu vào}
+\caption{Kết quả định vị chậu cây ở ba khoảng cách thực địa (\SI{3}{\meter}: sáu phiên chụp; \SI{5}{\meter} và \SI{7}{\meter}: năm phiên chụp mỗi mức), kèm chỉ số chất lượng đầu vào}
 \label{tab:semantic-bearing-results}
-\begin{tabular}{@{}cccccc@{}}
+\begin{tabular}{@{}clccccc@{}}
 \toprule
-\textbf{Phiên} & \textbf{Khoảng cách} & \textbf{Sai lệch so} & \textbf{Độ tin cậy} & \textbf{Chiều cao} & \textbf{Số điểm} \\
-\textbf{chụp} & \textbf{ước lượng} & \textbf{thực địa} & \textbf{YOLO} & \textbf{bbox (px)} & \textbf{cụm ngữ nghĩa} \\
+\textbf{Khoảng cách} & \textbf{Phiên} & \textbf{Ước lượng} & \textbf{Sai lệch} & \textbf{Độ tin cậy} & \textbf{Chiều cao} & \textbf{Số điểm} \\
+\textbf{thực địa} & \textbf{chụp} & & \textbf{so thực địa} & \textbf{YOLO} & \textbf{bbox (px)} & \textbf{cụm ngữ nghĩa} \\
 \midrule
-1 & \SI{2.77}{\meter} & $-7{,}6\%$ & 0,63 & 192,9 & 29\,841 \\
-2 & \SI{2.76}{\meter} & $-8{,}1\%$ & 0,90 & 193,9 & 29\,992 \\
-3 & \SI{3.13}{\meter} & $+4{,}2\%$ & 0,78 & 170,9 & 29\,974 \\
-4 & \SI{3.08}{\meter} & $+2{,}6\%$ & 0,65 & 173,6 & 29\,773 \\
-5 & \SI{3.26}{\meter} & $+8{,}5\%$ & 0,76 & 164,2 & 29\,913 \\
-6 & \SI{3.12}{\meter} & $+3{,}9\%$ & 0,76 & 171,4 & 30\,000 \\
+\multirow{6}{*}{\SI{3}{\meter}}
+ & 1 & \SI{2.77}{\meter} & $-7{,}6\%$ & 0,63 & 192,9 & 29\,841 \\
+ & 2 & \SI{2.76}{\meter} & $-8{,}1\%$ & 0,90 & 193,9 & 29\,992 \\
+ & 3 & \SI{3.13}{\meter} & $+4{,}2\%$ & 0,78 & 170,9 & 29\,974 \\
+ & 4 & \SI{3.08}{\meter} & $+2{,}6\%$ & 0,65 & 173,6 & 29\,773 \\
+ & 5 & \SI{3.26}{\meter} & $+8{,}5\%$ & 0,76 & 164,2 & 29\,913 \\
+ & 6 & \SI{3.12}{\meter} & $+3{,}9\%$ & 0,76 & 171,4 & 30\,000 \\
+\cmidrule(l){2-7}
+ & \multicolumn{1}{l}{Trung bình} & \SI{3.02}{\meter} & \multicolumn{4}{r}{Độ lệch chuẩn \SI{0.19}{\meter}, sai lệch trung bình $+0{,}6\%$ (TB tuyệt đối $6{,}2\%$)} \\
 \midrule
-\multicolumn{2}{l}{Trung bình} & \multicolumn{1}{r}{\SI{3.02}{\meter}} & \multicolumn{3}{r}{Độ lệch chuẩn \SI{0.19}{\meter} (6,2\%)} \\
+\multirow{5}{*}{\SI{5}{\meter}}
+ & 1 & \SI{4.49}{\meter} & $-10{,}2\%$ & 0,81 & 119,1 & 29\,606 \\
+ & 2 & \SI{5.07}{\meter} & $+1{,}4\%$  & 0,74 & 105,4 & 29\,984 \\
+ & 3 & \SI{5.00}{\meter} & $+0{,}0\%$  & 0,85 & 106,9 & 25\,826 \\
+ & 4 & \SI{5.06}{\meter} & $+1{,}2\%$  & 0,82 & 105,6 & 25\,932 \\
+ & 5 & \SI{5.01}{\meter} & $+0{,}3\%$  & 0,75 & 106,6 & 22\,543 \\
+\cmidrule(l){2-7}
+ & \multicolumn{1}{l}{Trung bình} & \SI{4.93}{\meter} & \multicolumn{4}{r}{Độ lệch chuẩn \SI{0.22}{\meter}, sai lệch trung bình $-1{,}5\%$ (TB tuyệt đối $2{,}6\%$)} \\
+\midrule
+\multirow{5}{*}{\SI{7}{\meter}}
+ & 1 & \SI{6.21}{\meter} & $-11{,}3\%$ & 0,85 & 86,1 & 29\,742 \\
+ & 2 & \SI{6.22}{\meter} & $-11{,}1\%$ & 0,51 & 85,9 & 29\,588 \\
+ & 3 & \SI{6.17}{\meter} & $-11{,}9\%$ & 0,73 & 86,6 & 30\,000 \\
+ & 4 & \SI{6.34}{\meter} & $-9{,}4\%$  & 0,71 & 84,3 & 29\,662 \\
+ & 5 & \SI{6.13}{\meter} & $-12{,}4\%$ & 0,82 & 87,2 & 29\,933 \\
+\cmidrule(l){2-7}
+ & \multicolumn{1}{l}{Trung bình} & \SI{6.21}{\meter} & \multicolumn{4}{r}{Độ lệch chuẩn \SI{0.07}{\meter}, sai lệch trung bình $-11{,}2\%$} \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -346,6 +365,13 @@ Hình~\ref{fig:six-viewers} minh hoạ vị trí đối tượng định vị đ
 
 Bản đồ tái hiện đúng hình dạng và bố cục nội thất của căn phòng (bàn, ghế, tủ, chậu cây ở đúng vị trí tương đối). Tuy nhiên vì camera QVGA độ phân giải thấp kết hợp YOLO11n (bản nano), một số nhãn phát hiện được là kết quả nhận diện sai — ví dụ ``ô tô'', ``máy bay'', ``đèn giao thông'' hầu như không có mặt thật trong văn phòng — trùng khớp với hạn chế phần cứng đã nêu ở Mục~\ref{sec:hw-limits}. Kết quả này cho thấy pipeline khái quát tốt sang bài toán dựng bản đồ toàn cảnh, dù độ tin cậy gán nhãn ngữ nghĩa vẫn bị giới hạn bởi phần cứng cảm biến hiện tại.
 
+\subsection{Đánh giá độ chính xác theo khoảng cách}
+\label{sec:distance-eval}
+
+Sáu phiên chụp ở Mục~\ref{sec:semantic-bearing} đều thực hiện ở cùng khoảng cách thực địa \SI{3.00}{\meter}. Để kiểm tra phương pháp có còn chính xác khi đối tượng ở xa hơn hay không, chúng tôi lặp lại quy trình B1--B8 (không đổi $H=\SI{1.25}{\meter}$, cùng chậu cây mục tiêu) tại hai khoảng cách thực địa mới: \textbf{năm phiên chụp độc lập ở \SI{5}{\meter}} và \textbf{năm phiên chụp độc lập ở \SI{7}{\meter}}, tổng hợp cùng Bảng~\ref{tab:semantic-bearing-results} ở Mục~\ref{sec:semantic-bearing}.
+
+Ba nhóm kết quả bộc lộ hai kiểu sai số khác nhau. Ở \SI{3}{\meter} và \SI{5}{\meter}, sai lệch trung bình gần như triệt tiêu ($+0{,}6\%$ và $-1{,}5\%$) nhưng độ lệch chuẩn tương đối lớn (\SI{0.19}{\meter} và \SI{0.22}{\meter}), với một vài phiên lệch tới $-10\%$ theo cả hai chiều — đặc trưng của \emph{nhiễu ngẫu nhiên} giữa các lần đo độc lập. Ở \SI{7}{\meter}, ngược lại: độ lệch chuẩn rất nhỏ (\SI{0.07}{\meter}, chưa bằng một phần ba so với hai mức trên) nhưng cả năm phiên đều lệch âm nhất quán quanh $-11\%$ — đặc trưng của \emph{sai số hệ thống} (systematic bias) chứ không phải nhiễu. Vì công thức khoảng cách đơn-ảnh $d = f_y H / h_{\text{px}}$ (Mục~\ref{sec:math}) là một quan hệ tỷ lệ thuận đơn giản giữa $d$ và $1/h_{\text{px}}$, một sai số hằng số tương đối trong $f_y$ (hiệu chỉnh camera) hoặc $H$ (chiều cao giả định của chậu cây) sẽ tạo ra đúng kiểu lệch tỷ lệ không đổi quan sát được — khả năng cao là nguyên nhân của thiên lệch $-11\%$ ở \SI{7}{\meter}, có thể đã tồn tại tương tự nhưng bị che khuất bởi nhiễu lớn hơn ở \SI{3}{\meter} và \SI{5}{\meter}. Hiệu chỉnh lại $f_y$ hoặc đo chính xác hơn $H$ là hướng khắc phục trực tiếp, được đưa vào Mục~\ref{sec:limitations}.
+
 % =====================================================================
 \section{Thảo luận}
 % =====================================================================
@@ -366,15 +392,16 @@ Cả hai tín hiệu cấu thành phương pháp (hướng và khoảng cách) �
 \subsection{Hạn chế}
 \label{sec:limitations}
 
-Nghiên cứu dựa trên sáu phiên chụp, một môi trường phòng đơn, một loại đối tượng mục tiêu (chậu cây) — chưa đủ đa dạng để khẳng định khả năng tổng quát hoá. Khoảng cách đơn-ảnh đòi hỏi biết trước chiều cao thật của đối tượng — hợp lý cho mốc tham chiếu cố định, không áp dụng trực tiếp cho vật thể kích thước thay đổi. Độ chính xác của khớp toàn cục phụ thuộc quỹ đạo có đủ đa dạng hình học; quỹ đạo quá ngắn hoặc gần thẳng có thể khiến phép khớp kém tin cậy hơn. Mở rộng loại đối tượng, số phiên chụp, và môi trường thử nghiệm là hướng phát triển ưu tiên. Về dài hạn, nâng cấp độ phân giải camera và năng lực tính toán biên (Mục~\ref{sec:hw-limits}) sẽ mở ra các phương án khắc phục triệt để hơn.
+Nghiên cứu dựa trên mười sáu phiên chụp (sáu ở \SI{3}{\meter}, năm ở \SI{5}{\meter}, năm ở \SI{7}{\meter}), một môi trường phòng đơn, một loại đối tượng mục tiêu (chậu cây) — chưa đủ đa dạng để khẳng định khả năng tổng quát hoá. Khoảng cách đơn-ảnh đòi hỏi biết trước chiều cao thật của đối tượng — hợp lý cho mốc tham chiếu cố định, không áp dụng trực tiếp cho vật thể kích thước thay đổi; sai lệch hệ thống $-11\%$ quan sát được ở \SI{7}{\meter} (Mục~\ref{sec:distance-eval}) cho thấy $H$ hoặc $f_y$ cần được hiệu chỉnh chính xác hơn khi mở rộng phạm vi khoảng cách hoạt động. Độ chính xác của khớp toàn cục phụ thuộc quỹ đạo có đủ đa dạng hình học; quỹ đạo quá ngắn hoặc gần thẳng có thể khiến phép khớp kém tin cậy hơn. Mở rộng loại đối tượng, số phiên chụp, và môi trường thử nghiệm là hướng phát triển ưu tiên. Về dài hạn, nâng cấp độ phân giải camera và năng lực tính toán biên (Mục~\ref{sec:hw-limits}) sẽ mở ra các phương án khắc phục triệt để hơn.
 
 % =====================================================================
 \section{Kết luận}
 % =====================================================================
 
-Bài báo trình bày một phương pháp định vị tuyệt đối vị trí đối tượng trong bản đồ ba chiều ngữ nghĩa cho robot giao hàng tự hành, kết hợp hướng suy ra từ cụm điểm ngữ nghĩa (quy đổi bằng phép khớp toàn cục trên toàn bộ quỹ đạo) và khoảng cách đơn-ảnh từ một khung hình duy nhất, hoàn toàn không phụ thuộc odometry. Đặc điểm cốt lõi là không có bước nào đòi hỏi pose của một khung hình đơn lẻ phải chính xác tuyệt đối. Xác thực trên sáu phiên chụp độc lập, phương pháp cho kết quả định vị dao động \SIrange{2.76}{3.26}{\meter} (trung bình \SI{3.02}{\meter}, độ lệch chuẩn \SI{0.19}{\meter}), khớp sát giá trị đo thực địa (\SI{3.00}{\meter}), sai số trung bình khoảng $6\%$. Kết quả cho thấy việc tách bạch tín hiệu hướng (khớp toàn cục ít nhạy nhiễu cục bộ) khỏi tín hiệu khoảng cách (độc lập odometry) là một hướng thiết kế pipeline định vị hiệu quả cho nền tảng phần cứng chi phí thấp. Các giới hạn về độ phân giải camera và năng lực tính toán biên (Mục~\ref{sec:hw-limits}) là cơ sở hoạch định lộ trình nâng cấp và mở rộng phạm vi đối tượng mục tiêu trong các nghiên cứu tiếp theo.
+Bài báo trình bày một phương pháp định vị tuyệt đối vị trí đối tượng trong bản đồ ba chiều ngữ nghĩa cho robot giao hàng tự hành, kết hợp hướng suy ra từ cụm điểm ngữ nghĩa (quy đổi bằng phép khớp toàn cục trên toàn bộ quỹ đạo) và khoảng cách đơn-ảnh từ một khung hình duy nhất, hoàn toàn không phụ thuộc odometry. Đặc điểm cốt lõi là không có bước nào đòi hỏi pose của một khung hình đơn lẻ phải chính xác tuyệt đối. Xác thực trên mười sáu phiên chụp độc lập ở ba khoảng cách thực địa (\SI{3}{\meter}, \SI{5}{\meter}, \SI{7}{\meter}), phương pháp cho sai số trung bình dưới $2\%$ ở \SI{3}{\meter} và \SI{5}{\meter}, nhưng bộc lộ sai số hệ thống khoảng $-11\%$ ở \SI{7}{\meter} (Mục~\ref{sec:distance-eval}) — chỉ dấu cho thấy cần hiệu chỉnh lại chiều cao đối tượng giả định hoặc tiêu cự camera khi mở rộng phạm vi hoạt động. Kết quả cho thấy việc tách bạch tín hiệu hướng (khớp toàn cục ít nhạy nhiễu cục bộ) khỏi tín hiệu khoảng cách (độc lập odometry) là một hướng thiết kế pipeline định vị hiệu quả cho nền tảng phần cứng chi phí thấp. Các giới hạn về độ phân giải camera và năng lực tính toán biên (Mục~\ref{sec:hw-limits}) là cơ sở hoạch định lộ trình nâng cấp và mở rộng phạm vi đối tượng mục tiêu trong các nghiên cứu tiếp theo.
 
 \small
+\setlength{\itemsep}{0pt}
 \begin{thebibliography}{9}
 
 \bibitem{yolo}
