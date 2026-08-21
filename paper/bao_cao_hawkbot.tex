@@ -32,6 +32,7 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{placeins}
+\usepackage{stfloats}
 
 \hypersetup{
     colorlinks=true,
@@ -227,7 +228,7 @@ Không đại lượng nào ở trên phụ thuộc pose odometry của một kh
 
 Với mỗi phiên chụp, ba khối xử lý ở Mục~\ref{sec:math} được thực hiện tuần tự: \textbf{(i)} dựng bản đồ 3D thuần hình học bằng MapAnything, \textbf{(ii)} gán nhãn YOLO lên từng điểm 3D để có đám mây điểm ngữ nghĩa, và \textbf{(iii)} ước lượng khoảng cách đơn-ảnh — hai tín hiệu hướng (suy ra từ (ii)) và khoảng cách (từ (iii)) sau đó được kết hợp thành vị trí tuyệt đối. Phương pháp được xác thực trên \textbf{sáu phiên chụp độc lập} (đánh số 1--6 trong bài báo này), mỗi lần robot quan sát cùng một chậu cây theo một quỹ đạo di chuyển khác nhau, đối chiếu với giá trị đo thực địa bằng thước dây (\SI{3.00}{\meter}). Để đánh giá độ ổn định khi mở rộng phạm vi hoạt động, quy trình còn được lặp lại thêm ở hai khoảng cách xa hơn — \SI{5}{\meter} và \SI{7}{\meter}, năm phiên chụp độc lập mỗi mức — tổng hợp cùng kết quả \SI{3}{\meter} ở Bảng~\ref{tab:semantic-bearing-results} và phân tích riêng ở Mục~\ref{sec:distance-eval}. Hình~\ref{fig:room-scan} minh hoạ trước môi trường thử nghiệm qua một lần quét mở rộng toàn bộ căn phòng, chỉ dừng ở bước (i)--(ii) (không lọc một lớp mục tiêu để tính khoảng cách/hướng — chi tiết ở Mục~\ref{sec:room-scan}); Hình~\ref{fig:real-photo} ở phần sau đối chiếu ảnh môi trường với một khung hình YOLO phát hiện chậu cây.
 
-\begin{figure*}[t]
+\begin{figure*}[!b]
 \centering
 \begin{subfigure}[b]{0.46\textwidth}
 \centering
