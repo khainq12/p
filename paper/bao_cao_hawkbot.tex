@@ -59,9 +59,9 @@ và khoảng cách đơn-ảnh}}
 {\large\bfseries Tóm tắt\par}
 \vspace{0.3em}
 
-Robot giao hàng tự hành hoạt động trong nhà cần một bản đồ ba chiều (3D) có gắn nhãn ngữ nghĩa để định vị đối tượng và mốc tham chiếu. Báo cáo trình bày một hệ thống kết hợp \textbf{YOLO11n}, mô hình tái tạo đơn mắt \textbf{MapAnything}, và một \textbf{phương pháp định vị tuyệt đối kết hợp hai tín hiệu độc lập} — thay cho phép tam giác hoá tia camera truyền thống vốn nhạy cảm với nhiễu pose odometry của từng khung hình riêng lẻ. Tín hiệu \textbf{hướng} suy ra từ cụm điểm ngữ nghĩa của đối tượng (phân cụm DBSCAN), quy đổi sang toạ độ thực bằng một \textbf{phép khớp toàn cục Umeyama} tính một lần cho toàn quỹ đạo; tín hiệu \textbf{khoảng cách đơn-ảnh} ước lượng từ kích thước khung bao trên một khung hình duy nhất, độc lập hoàn toàn với odometry.
+Robot giao hàng tự hành hoạt động trong nhà cần một bản đồ ba chiều (3D) có gắn nhãn ngữ nghĩa để định vị đối tượng và mốc tham chiếu. Báo cáo trình bày một hệ thống kết hợp \textbf{YOLO11n}, mô hình tái tạo đơn mắt \textbf{MapAnything}, và một \textbf{phương pháp định vị tuyệt đối kết hợp hai tín hiệu độc lập} — thay cho phép tam giác hoá tia camera truyền thống vốn nhạy cảm với nhiễu pose odometry của từng khung hình riêng lẻ. Toàn bộ cảm biến chỉ gồm một camera đơn giá thành thấp (ESP32-CAM), không dùng camera stereo, RGB-D hay LiDAR như phần lớn hệ thống định vị đối tượng chính xác cao hiện nay — độ chính xác đến từ thiết kế thuật toán, không phải từ nâng cấp cảm biến. Tín hiệu \textbf{hướng} suy ra từ cụm điểm ngữ nghĩa của đối tượng (phân cụm DBSCAN), quy đổi sang toạ độ thực bằng một \textbf{phép khớp toàn cục Umeyama} tính một lần cho toàn quỹ đạo; tín hiệu \textbf{khoảng cách đơn-ảnh} ước lượng từ kích thước khung bao trên một khung hình duy nhất, độc lập hoàn toàn với odometry.
 
-Xác thực trên sáu phiên chụp độc lập, mỗi lần robot quan sát cùng một chậu cây theo một quỹ đạo khác nhau, phương pháp cho kết quả định vị \SIrange{2.76}{3.26}{\meter} (trung bình \SI{3.02}{\meter}, độ lệch chuẩn \SI{0.19}{\meter}), khớp sát giá trị đo thực địa \SI{3.00}{\meter}, \textbf{sai số trung bình khoảng $6\%$} — không phụ thuộc đáng kể vào độ tin cậy phát hiện 2D hay kích thước cụm điểm. Báo cáo cũng phân tích giới hạn phần cứng hiện tại làm cơ sở cho các lựa chọn thiết kế và hướng phát triển tiếp theo.
+Xác thực trên mười sáu phiên chụp độc lập ở ba khoảng cách thực địa (\SI{3}{\meter}, \SI{5}{\meter}, \SI{7}{\meter}), phương pháp cho \textbf{sai số trung bình dưới $2\%$} ở hai mức \SI{3}{\meter} và \SI{5}{\meter} (độ lệch chuẩn \SI{0.19}{\meter} và \SI{0.22}{\meter}), nhưng bộc lộ một \textbf{sai số hệ thống khoảng $-11\%$} ở \SI{7}{\meter} — độ lệch chuẩn ở mức này lại rất nhỏ (\SI{0.07}{\meter}), cho thấy đây là thiên lệch có thể hiệu chỉnh được chứ không phải nhiễu ngẫu nhiên. Báo cáo phân tích rõ nguồn gốc thiên lệch này cùng giới hạn phần cứng hiện tại, làm cơ sở cho các lựa chọn thiết kế và hướng phát triển tiếp theo.
 
 \smallskip
 \noindent\textbf{Từ khoá:} bản đồ ba chiều ngữ nghĩa, định vị đối tượng, MapAnything, YOLO, robot giao hàng tự hành, khớp toàn cục Umeyama, khoảng cách đơn-ảnh.
@@ -77,7 +77,7 @@ Xác thực trên sáu phiên chụp độc lập, mỗi lần robot quan sát c
 
 Robot giao hàng tự hành hoạt động trong nhà cần xây dựng và duy trì một bản đồ ba chiều có gắn nhãn ngữ nghĩa (semantic 3D map) nhằm nhận biết vị trí các đối tượng và mốc tham chiếu trong môi trường — ví dụ hàng hoá cần giao, hoặc các vật thể cố định như chậu cây, bàn ghế, dùng làm điểm neo cho việc điều hướng. Một pipeline xử lý điển hình cho bài toán này kết hợp ba thành phần: (i) một mô hình phát hiện đối tượng hai chiều (YOLO) chạy trên từng khung hình camera, (ii) một mô hình tái tạo cảnh quan ba chiều từ ảnh đơn mắt (monocular 3D reconstruction) để khôi phục hình học của không gian, và (iii) một cơ chế xác định vị trí tuyệt đối của đối tượng trong hệ toạ độ thực (đơn vị mét), thường dựa trên dữ liệu định vị hành trình (odometry) của robot.
 
-Việc triển khai một hệ thống định vị đối tượng trong điều kiện thực tế — sử dụng phần cứng chi phí thấp và dữ liệu định vị hành trình (odometry) vốn tích luỹ sai số theo thời gian — đặt ra câu hỏi cốt lõi về việc đâu là yếu tố thực sự chi phối độ chính xác của hệ thống, và làm thế nào để cải thiện độ tin cậy một cách hiệu quả nhất trong giới hạn tài nguyên hiện có. Trong quá trình triển khai thực nghiệm trên nền tảng robot Hawkbot (vận hành trên ROS2 Jazzy) với camera ESP32-CAM, nhóm nghiên cứu nhận thấy rằng các phương pháp định vị phụ thuộc trực tiếp vào pose (vị trí và hướng) odometry của \emph{từng khung hình riêng lẻ} rất nhạy với nhiễu cục bộ. Bài báo này trình bày một phương pháp định vị thay thế, kết hợp \textbf{hướng} suy ra từ cụm điểm ngữ nghĩa của đối tượng trong bản đồ điểm MapAnything với \textbf{khoảng cách} ước lượng đơn-ảnh không phụ thuộc odometry. Phương pháp được xác thực bằng số đo thực địa qua sáu phiên chụp độc lập, cho kết quả ổn định và nhất quán, mở ra một hướng thiết kế pipeline định vị ít nhạy cảm hơn với nhiễu odometry cục bộ, không đòi hỏi đầu tư thêm phần cứng.
+Việc triển khai một hệ thống định vị đối tượng trong điều kiện thực tế — sử dụng phần cứng chi phí thấp và dữ liệu định vị hành trình (odometry) vốn tích luỹ sai số theo thời gian — đặt ra câu hỏi cốt lõi về việc đâu là yếu tố thực sự chi phối độ chính xác của hệ thống, và làm thế nào để cải thiện độ tin cậy một cách hiệu quả nhất trong giới hạn tài nguyên hiện có. Trong quá trình triển khai thực nghiệm trên nền tảng robot Hawkbot (vận hành trên ROS2 Jazzy) với camera ESP32-CAM, nhóm nghiên cứu nhận thấy rằng các phương pháp định vị phụ thuộc trực tiếp vào pose (vị trí và hướng) odometry của \emph{từng khung hình riêng lẻ} rất nhạy với nhiễu cục bộ. Bài báo này trình bày một phương pháp định vị thay thế, kết hợp \textbf{hướng} suy ra từ cụm điểm ngữ nghĩa của đối tượng trong bản đồ điểm MapAnything với \textbf{khoảng cách} ước lượng đơn-ảnh không phụ thuộc odometry. Điểm đáng chú ý là toàn bộ phần cứng cảm biến chỉ gồm một camera đơn giá thành thấp (ESP32-CAM) — không dùng camera stereo, cảm biến RGB-D, hay LiDAR như phần lớn hệ thống định vị đối tượng độ chính xác cao hiện nay; độ chính xác đạt được hoàn toàn nhờ thiết kế thuật toán, không phải nhờ nâng cấp cảm biến. Phương pháp được xác thực bằng số đo thực địa qua mười sáu phiên chụp độc lập ở ba khoảng cách (\SI{3}{\meter}, \SI{5}{\meter}, \SI{7}{\meter}), cho kết quả ổn định và nhất quán, mở ra một hướng thiết kế pipeline định vị ít nhạy cảm hơn với nhiễu odometry cục bộ, không đòi hỏi đầu tư thêm phần cứng.
 
 % =====================================================================
 \section{Công trình liên quan}
@@ -96,6 +96,8 @@ Khác với các hướng trên, phương pháp trong bài báo này không tố
 % =====================================================================
 
 \subsection{Nền tảng phần cứng}
+
+Toàn bộ hệ thống được xây dựng từ phần cứng phổ thông, giá thành thấp (Bảng~\ref{tab:hw-specs}) — không dùng camera stereo, cảm biến RGB-D, hay LiDAR như phần lớn hệ thống định vị đối tượng chính xác cao hiện nay. Lựa chọn này đặt toàn bộ gánh nặng độ chính xác lên thiết kế thuật toán, thay vì lên chất lượng cảm biến.
 
 \begin{table}[H]
 \centering
@@ -202,6 +204,12 @@ d = \frac{f_y \cdot H}{h_{\text{px}}}, \qquad
 \mathbf{x}^* = \mathbf{o} + d \, \hat{\mathbf{b}}
 \end{equation}
 
+\textbf{Nhập nhằng khoảng cách--kích thước.} Công thức (3) giả định biết trước $H$ cho lớp mục tiêu. Nếu tồn tại hai vật thể cùng lớp với chiều cao thật $H_1 \neq H_2$, đặt ở hai khoảng cách $d_1, d_2$ sao cho
+\begin{equation}
+\frac{H_1}{d_1} = \frac{H_2}{d_2} \;\left(= \frac{h_{\text{px}}}{f_y}\right),
+\end{equation}
+hai vật cho cùng $h_{\text{px}}$ trên ảnh và công thức (3) không thể phân biệt được — đây là nhập nhằng khoảng cách--kích thước (scale--distance ambiguity) kinh điển của thị giác đơn mắt, không giải được từ một ảnh tĩnh duy nhất dù bằng công thức hình học hay mô hình học sâu (Mục~\ref{sec:global-fit-stable} phân tích thêm tại sao suy luận độ sâu của MapAnything cũng không tự động thoát khỏi giới hạn này). Bước phân cụm DBSCAN ở B6, ưu tiên cụm điểm dày đặc/bền vững nhất qua nhiều khung hình, giảm thiểu nguy cơ nhầm với vật giả chỉ xuất hiện thoáng qua, nhưng không loại trừ nhầm lẫn giữa hai thực thể \emph{thật} cùng lớp — phương pháp ngầm giả định môi trường chỉ có một thực thể của lớp mục tiêu, đúng với thiết lập thực nghiệm hiện tại (Mục~\ref{sec:limitations}).
+
 Không đại lượng nào ở trên phụ thuộc pose odometry của một khung đơn lẻ ngoài $\mathbf{o}$ (chỉ để neo kết quả) — phép khớp dùng toàn bộ quỹ đạo, khoảng cách hoàn toàn không dùng odometry. Hình~\ref{fig:pipeline-new} tổng hợp trực quan toàn bộ pipeline định vị mô tả ở trên, gồm đủ ba khối (i) dựng bản đồ 3D, (ii) gán nhãn ngữ nghĩa YOLO, và (iii) ước lượng khoảng cách.
 
 \begin{figure*}[t]
@@ -217,7 +225,7 @@ Không đại lượng nào ở trên phụ thuộc pose odometry của một kh
 \label{sec:semantic-bearing}
 % =====================================================================
 
-Với mỗi phiên chụp, ba khối xử lý ở Mục~\ref{sec:math} được thực hiện tuần tự: \textbf{(i)} dựng bản đồ 3D thuần hình học bằng MapAnything, \textbf{(ii)} gán nhãn YOLO lên từng điểm 3D để có đám mây điểm ngữ nghĩa, và \textbf{(iii)} ước lượng khoảng cách đơn-ảnh — hai tín hiệu hướng (suy ra từ (ii)) và khoảng cách (từ (iii)) sau đó được kết hợp thành vị trí tuyệt đối. Phương pháp được xác thực trên \textbf{sáu phiên chụp độc lập} (đánh số 1--6 trong bài báo này), mỗi lần robot quan sát cùng một chậu cây theo một quỹ đạo di chuyển khác nhau, đối chiếu với giá trị đo thực địa bằng thước dây (\SI{3.00}{\meter}). Hình~\ref{fig:room-scan} minh hoạ trước môi trường thử nghiệm qua một lần quét mở rộng toàn bộ căn phòng, chỉ dừng ở bước (i)--(ii) (không lọc một lớp mục tiêu để tính khoảng cách/hướng — chi tiết ở Mục~\ref{sec:room-scan}); Hình~\ref{fig:real-photo} ở phần sau đối chiếu ảnh môi trường với một khung hình YOLO phát hiện chậu cây.
+Với mỗi phiên chụp, ba khối xử lý ở Mục~\ref{sec:math} được thực hiện tuần tự: \textbf{(i)} dựng bản đồ 3D thuần hình học bằng MapAnything, \textbf{(ii)} gán nhãn YOLO lên từng điểm 3D để có đám mây điểm ngữ nghĩa, và \textbf{(iii)} ước lượng khoảng cách đơn-ảnh — hai tín hiệu hướng (suy ra từ (ii)) và khoảng cách (từ (iii)) sau đó được kết hợp thành vị trí tuyệt đối. Phương pháp được xác thực trên \textbf{sáu phiên chụp độc lập} (đánh số 1--6 trong bài báo này), mỗi lần robot quan sát cùng một chậu cây theo một quỹ đạo di chuyển khác nhau, đối chiếu với giá trị đo thực địa bằng thước dây (\SI{3.00}{\meter}). Để đánh giá độ ổn định khi mở rộng phạm vi hoạt động, quy trình còn được lặp lại thêm ở hai khoảng cách xa hơn — \SI{5}{\meter} và \SI{7}{\meter}, năm phiên chụp độc lập mỗi mức — tổng hợp cùng kết quả \SI{3}{\meter} ở Bảng~\ref{tab:semantic-bearing-results} và phân tích riêng ở Mục~\ref{sec:distance-eval}. Hình~\ref{fig:room-scan} minh hoạ trước môi trường thử nghiệm qua một lần quét mở rộng toàn bộ căn phòng, chỉ dừng ở bước (i)--(ii) (không lọc một lớp mục tiêu để tính khoảng cách/hướng — chi tiết ở Mục~\ref{sec:room-scan}); Hình~\ref{fig:real-photo} ở phần sau đối chiếu ảnh môi trường với một khung hình YOLO phát hiện chậu cây.
 
 \begin{figure*}[t]
 \centering
@@ -380,6 +388,27 @@ Ba nhóm kết quả bộc lộ hai kiểu sai số khác nhau. Ở \SI{3}{\mete
 \label{sec:global-fit-stable}
 
 Cả hai tín hiệu cấu thành phương pháp (hướng và khoảng cách) đều tránh phụ thuộc vào pose odometry của một khung hình đơn lẻ. Phép khớp Umeyama xác định hướng dựa trên toàn bộ quỹ đạo camera trong một phiên chụp — một vài khung có pose nhiễu cục bộ chỉ đóng góp một phần nhỏ vào phép khớp bình phương tối thiểu trên toàn quỹ đạo, thay vì quyết định trực tiếp kết quả như trong các phương pháp bắn tia từ pose từng khung. Khoảng cách đơn-ảnh tách biệt hoàn toàn khỏi odometry, chỉ phụ thuộc kích thước hình học của đối tượng trong một khung và thông số nội tại camera đã hiệu chỉnh sẵn. Sự kết hợp này giải thích vì sao kết quả trên sáu phiên chụp độc lập hội tụ chặt quanh giá trị đo thực địa dù mỗi lần robot di chuyển theo một quỹ đạo khác nhau.
+
+\textbf{Kiểm chứng thực nghiệm: dùng thẳng vị trí 3D còn kém hơn.} Để kiểm tra xem có thể bỏ qua khoảng cách đơn-ảnh và dùng thẳng vị trí $(s^*R^*\mathbf{c}_{\text{raw}}+\mathbf{t}^*)$ suy ra từ MapAnything và phép khớp Umeyama hay không, chúng tôi tính khoảng cách \emph{trực tiếp} $\lVert (s^*R^*\mathbf{c}_{\text{raw}}+\mathbf{t}^*) - \mathbf{o} \rVert$ cho cả mười sáu phiên chụp, không dùng công thức (3). Bảng~\ref{tab:3d-vs-mono} đối chiếu sai lệch trung bình của hai cách tính.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Sai lệch trung bình: khoảng cách đơn-ảnh (dùng trong bài) so với khoảng cách suy trực tiếp từ vị trí 3D MapAnything, không hiệu chỉnh bằng $H$}
+\label{tab:3d-vs-mono}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Khoảng cách} & \textbf{Đơn-ảnh} & \textbf{Vị trí 3D} \\
+\textbf{thực địa} & \textbf{(dùng trong bài)} & \textbf{(trực tiếp)} \\
+\midrule
+\SI{3}{\meter} & $+0{,}6\%$ & $-21{,}9\%$ \\
+\SI{5}{\meter} & $-1{,}5\%$ & $-22{,}2\%$ \\
+\SI{7}{\meter} & $-11{,}2\%$ & $-38{,}4\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Ở cả ba mức khoảng cách, dùng thẳng vị trí 3D suy ra từ MapAnything cho sai lệch \textbf{lớn hơn nhiều} — có trường hợp cá biệt lệch tới gần $-80\%$ — so với công thức đơn-ảnh. Nguyên nhân: phép khớp Umeyama là một phép khớp \emph{toàn cục}, tìm một bộ $(s,R,\mathbf{t})$ chung tốt nhất trên trung bình cả quỹ đạo, không đảm bảo chính xác cho vị trí của một điểm cụ thể; sai số này càng lớn khi quỹ đạo có đoạn quay (nguồn gốc trôi yaw đã nêu ở Mục~\ref{sec:hw-limits}) làm méo hình dạng quỹ đạo MapAnything so với odometry cần khớp. Điều này cũng cho thấy suy luận độ sâu bằng mô hình học sâu của MapAnything không tự động thoát khỏi nhập nhằng khoảng cách--kích thước (Mục~\ref{sec:math}) — nó chỉ chuyển tham chiếu mét từ ``biết trước $H$'' sang ``tin vào odometry'', và trong thiết lập phần cứng giá rẻ này, tham chiếu odometry hoá ra kém tin cậy hơn. Kết quả này khẳng định lựa chọn thiết kế của bài báo: dùng vị trí 3D chỉ cho \emph{hướng} (một vector đơn vị, ít nhạy sai số tỉ lệ tổng thể) chứ không dùng cho \emph{khoảng cách tuyệt đối} — nếu làm ngược lại, độ chính xác sẽ tệ hơn hẳn.
 
 \subsection{Các hướng khắc phục bằng phần cứng đã thử nghiệm và chưa khả thi}
 \label{sec:hw-alternatives}
