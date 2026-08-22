@@ -13,6 +13,20 @@ Docker `hawkbot-bringup` local trên máy — **không qua SSH**, dùng lệnh
 (QVGA 320×240). Xử lý nặng (YOLO, MapAnything) chạy trên server GPU từ xa
 **avis-1** (SSH alias, user `khai`, thư mục làm việc
 `/home/khai/semantic-mapping`, GPU **RTX 5000 Ada 32GB VRAM** — đủ mạnh,
+
+**Kết nối avis-1**: alias đã cấu hình sẵn trong `~/.ssh/config` (nằm ở home
+directory, KHÔNG phải `/tmp` nên bền vững qua các lần sandbox reset):
+```
+Host avis-1
+  HostName avis-1
+  Port 2202
+  User khai
+```
+Hostname `avis-1` phân giải qua mạng **Tailscale** (đã cài, đã kết nối sẵn
+trên máy — `tailscale status` để kiểm tra). Vì vậy một phiên Claude Code MỚI
+trên **CÙNG máy sandbox này** chỉ cần gọi thẳng `ssh avis-1 "..."`, không cần
+cấu hình gì thêm. SSH thỉnh thoảng timeout (`port 2202 Connection timed
+out`) — không phải lỗi, thử lại vài lần cách nhau ~1-2 phút.
 KHÔNG phải nút thắt).
 
 Repo: **https://github.com/khainq12/p**
