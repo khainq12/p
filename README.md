@@ -1,10 +1,17 @@
 # hawkbot semantic mapping
 
-Pipeline định vị vật thể (chậu cây) bằng YOLO + tam giác hóa tia camera dựa trên
-odometry của robot "hawkbot" (ESP32-CAM QVGA + ROS2 Jazzy).
+Pipeline định vị tuyệt đối vật thể (chậu cây) trong bản đồ 3D ngữ nghĩa cho
+robot "hawkbot" (ESP32-CAM QVGA + ROS2 Jazzy), kết hợp hướng từ cụm điểm
+ngữ nghĩa MapAnything (khớp toàn cục Umeyama) và khoảng cách đơn-ảnh — thay
+cho tam giác hóa tia camera dựa trên odometry (đã bỏ, xem lý do ở dưới).
 
-Xem **[ISSUE.md](ISSUE.md)** để biết vấn đề đang gặp phải và những gì đã thử /
-đã loại trừ / còn cần làm tiếp.
+**Đọc [HANDOFF.md](HANDOFF.md) trước tiên** — tóm tắt đầy đủ phương pháp
+hiện tại, dữ liệu đã thu thập, cấu trúc bài báo, việc đang dang dở, và các
+bẫy/lỗi đã gặp. File này là bàn giao cho phiên làm việc mới.
+
+`[ISSUE.md](ISSUE.md)` mang tính lịch sử — ghi lại quá trình điều tra gốc rễ
+vì sao tam giác hóa tia camera sai (odometry yaw trôi khi rẽ), dẫn tới quyết
+định đổi sang phương pháp hiện tại. Không cần đọc trừ khi tò mò.
 
 ## Cấu trúc
 
