@@ -232,13 +232,13 @@ Với mỗi phiên chụp, ba khối xử lý ở Mục~\ref{sec:math} được 
 \centering
 \begin{subfigure}[b]{0.46\textwidth}
 \centering
-\includegraphics[height=6.0cm,keepaspectratio]{paper_figs/room_scan_photo.png}
+\includegraphics[height=5.0cm,keepaspectratio]{paper_figs/room_scan_photo.png}
 \caption{Ảnh chụp thực tế}
 \end{subfigure}
 \hspace{1em}
 \begin{subfigure}[b]{0.46\textwidth}
 \centering
-\includegraphics[height=6.0cm,keepaspectratio]{paper_figs/room_scan_topdown.png}
+\includegraphics[height=5.0cm,keepaspectratio]{paper_figs/room_scan_topdown.png}
 \caption{Bản đồ điểm (nhìn từ trên, cùng hướng với ảnh thực tế)}
 \end{subfigure}
 \caption{Quét toàn bộ căn phòng: đối chiếu ảnh thực tế (trái) và bản đồ điểm 3D dựng từ 239 khung hình, nhìn từ trên xuống (phải). Marker vàng đánh dấu tâm cụm điểm lớn nhất của mỗi lớp ngữ nghĩa; đường đỏ là quỹ đạo robot.}
@@ -306,14 +306,15 @@ Cả sáu phiên chụp cho sai lệch tuyệt đối trong khoảng $2$--$9\%$ 
 
 Hình~\ref{fig:six-viewers} minh hoạ vị trí đối tượng định vị được (marker xanh lá, kèm khoảng cách ước lượng) cùng quỹ đạo robot (đường đỏ) trên bản đồ điểm đám mây tương ứng của cả sáu phiên chụp. Hình~\ref{fig:6cap-3d} tổng hợp cả sáu quỹ đạo và vị trí ước lượng trong một khung nhìn ba chiều duy nhất (mỗi phiên chụp giữ hệ toạ độ riêng, gốc tại điểm xuất phát), cho thấy trực quan mức độ hội tụ của sáu kết quả độc lập quanh cùng một khoảng cách. Kết quả sáu lần đo hội tụ chặt quanh giá trị đo thực địa, sai số trung bình khoảng $6\%$, không phụ thuộc rõ rệt vào hình dạng quỹ đạo cụ thể của từng phiên (Hình~\ref{fig:6cap-3d}) hay độ tin cậy phát hiện 2D (Bảng~\ref{tab:semantic-bearing-results}) — phù hợp với lập luận ở Mục~\ref{sec:global-fit-stable} rằng độ ổn định của phương pháp đến từ việc tách bạch hai tín hiệu hướng và khoảng cách khỏi pose odometry từng khung. Hình~\ref{fig:real-photo} đối chiếu môi trường thử nghiệm thực tế với một khung hình cụ thể mà YOLO11n phát hiện được chậu cây.
 
-\begin{figure}[H]
+\begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{paper_figs/fig_6captures_3d.png}
 \caption{Quỹ đạo camera (đường liền, ô vuông = điểm xuất phát) và vị trí chậu cây ước lượng (tam giác + đường đứt, cao \SI{1.25}{\meter} — chiều cao thật của cây) của sáu phiên chụp, mỗi phiên trong hệ toạ độ riêng gốc tại điểm xuất phát.}
 \label{fig:6cap-3d}
 \end{figure}
 
-\begin{figure}[H]
+\newpage
+\begin{figure}[t]
 \centering
 \begin{subfigure}[b]{0.48\columnwidth}
 \centering
