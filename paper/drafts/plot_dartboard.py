@@ -3,7 +3,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
-labels = ['Phien 1', 'Phien 2', 'Phien 3', 'Phien 4', 'Phien 5', 'Phien 6']
+labels = ['Phiên 1', 'Phiên 2', 'Phiên 3', 'Phiên 4', 'Phiên 5', 'Phiên 6']
 dist = [2.77, 2.76, 3.13, 3.08, 3.26, 3.12]
 gt = 3.00
 std = 0.19
@@ -14,7 +14,7 @@ angles_rad = np.deg2rad(angles_deg)
 GREEN = '#1a8f5e'
 DARK = '#0d4a2e'
 
-fig = plt.figure(figsize=(7.2, 8.0), dpi=220)
+fig = plt.figure(figsize=(7.2, 7.0), dpi=220)
 ax = fig.add_subplot(111, projection='polar')
 ax.set_theta_zero_location('N')
 ax.set_theta_direction(-1)
@@ -33,7 +33,7 @@ ax.fill_between(theta_full, gt-std, gt+std, color=GREEN, alpha=0.10, zorder=1)
 ax.plot(theta_full, [gt]*len(theta_full), '--', color='#222', linewidth=1.6, zorder=2)
 
 ax.plot(0, 0, marker='o', markersize=10, color='#222', zorder=5)
-ax.annotate('Chau cay\n(vi tri that)', xy=(0, 0), xytext=(np.deg2rad(30), 0.95),
+ax.annotate('Chậu cây\n(vị trí thật)', xy=(0, 0), xytext=(np.deg2rad(30), 0.95),
             textcoords='data', fontsize=9.5, ha='left', va='center', color='#222', fontweight='bold')
 
 def label_align(deg):
@@ -57,19 +57,19 @@ for a, deg, r, lab in zip(angles_rad, angles_deg, dist, labels):
                 textcoords='data', fontsize=9.5, ha=ha, va=va, color=DARK, fontweight='bold')
 
 legend_elems = [
-    plt.Line2D([0], [0], color='#222', linestyle='--', linewidth=1.6, label=f'Vi tri that (do thuc dia): {gt:.2f} m'),
-    plt.Rectangle((0,0),1,1, facecolor=GREEN, alpha=0.10, label=f'Do lech chuan (+-{std:.2f} m)'),
+    plt.Line2D([0], [0], color='#222', linestyle='--', linewidth=1.6, label=f'Vị trí thật (đo thực địa): {gt:.2f} m'),
+    plt.Rectangle((0,0),1,1, facecolor=GREEN, alpha=0.10, label=f'Độ lệch chuẩn (±{std:.2f} m)'),
     plt.Line2D([0], [0], marker='^', color='w', markerfacecolor=GREEN, markeredgecolor=DARK,
-               markersize=12, label='Vi tri uoc luong (6 phien doc lap)'),
+               markersize=12, label='Vị trí ước lượng (6 phiên độc lập)'),
 ]
 ax.legend(handles=legend_elems, loc='upper center', bbox_to_anchor=(0.5, -0.06), fontsize=9.5, frameon=False, ncol=1)
 
-fig.suptitle('Vi tri chau cay uoc luong qua sau phien chup doc lap',
-              fontsize=13.5, y=0.98, fontweight='bold')
-ax.set_title('khoang cach = ban kinh; goc chi de tach 6 diem cho de nhin (khong bieu dien huong that)',
-              fontsize=10, color='#666', pad=18)
+fig.suptitle('Vị trí chậu cây ước lượng qua sáu phiên chụp độc lập',
+              fontsize=13.5, y=0.99, fontweight='bold')
+ax.set_title('khoảng cách = bán kính; góc chỉ để tách 6 điểm cho dễ nhìn (không biểu diễn hướng thật)',
+              fontsize=10, color='#666', pad=10)
 
-fig.tight_layout(rect=[0, 0.02, 1, 0.94])
-fig.savefig('/tmp/claude-1000/-home-ubuntu-Desktop/c43de420-f59a-4582-816c-284dba0703a9/scratchpad/fig_dartboard_v2.png',
+fig.tight_layout(rect=[0, 0.02, 1, 0.97])
+fig.savefig('/tmp/claude-1000/-home-ubuntu-Desktop/7015d3ad-0542-4555-9746-b94c4b9a9420/scratchpad/fig_dartboard_v2.png',
             dpi=220, bbox_inches='tight', facecolor='white')
 print('saved fig_dartboard_v2.png')
