@@ -1,0 +1,112 @@
+<mxfile host="app.diagrams.net" agent="claude-code" version="24.7.0">
+  <diagram name="Pipeline HawkBot" id="pipeline-hawkbot">
+    <mxGraphModel dx="1400" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="500" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ================= LEFT INPUTS ================= -->
+        <mxCell id="box_frames" value="Selected camera frames" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4a453c;strokeWidth=2;fontSize=15;fontStyle=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="20" y="30" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="box_odom" value="Per-frame odometry pose" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4a453c;strokeWidth=2;fontSize=15;fontStyle=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="20" y="335" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ================= MAPANYTHING ================= -->
+        <mxCell id="box_mapanything" value="MapAnything&lt;br&gt;&lt;font style=&quot;font-size:12.5px;color:#55504a;font-weight:normal;&quot;&gt;images only, no odometry&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4a453c;strokeWidth=2;fontSize=15;fontStyle=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="270" y="30" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ================= OUTPUTS OF MAPANYTHING ================= -->
+        <mxCell id="box_points" value="3D points + YOLO class labels&lt;br&gt;&lt;font style=&quot;font-size:12px;color:#55504a;font-weight:normal;&quot;&gt;each point has a class label&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4a453c;strokeWidth=2;fontSize=15;fontStyle=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="520" y="30" width="240" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="box_trajectory" value="MapAnything's own camera trajectory&lt;br&gt;&lt;font style=&quot;font-size:12px;color:#55504a;font-weight:normal;&quot;&gt;its own internal coordinates&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4a453c;strokeWidth=2;fontSize=14.5;fontStyle=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="480" y="192" width="240" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ================= GLOBAL ALIGNMENT ================= -->
+        <mxCell id="box_alignment" value="Global alignment (Umeyama fit)&lt;br&gt;&lt;font style=&quot;font-size:12px;color:#55504a;font-weight:normal;&quot;&gt;matches MapAnything's trajectory&lt;br&gt;to odometry → s, R, t&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:11.5px;color:#55504a;font-weight:normal;font-style:italic;&quot;&gt;fit once, not per-frame&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4a453c;strokeWidth=2;fontSize=15;fontStyle=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="790" y="150" width="260" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ================= TOP ROW: BEARING ================= -->
+        <mxCell id="box_filter" value="Filter by target class&lt;br&gt;→ DBSCAN, largest cluster" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4a453c;strokeWidth=2;fontSize=14.5;fontStyle=1;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="790" y="30" width="260" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="box_bearing" value="Cluster center ×&lt;br&gt;alignment → BEARING" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#157a4f;strokeWidth=2.4;fontSize=14.5;fontStyle=1;fontColor=#157a4f;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="30" width="260" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ================= BOTTOM ROW: DISTANCE ================= -->
+        <mxCell id="box_distance" value="Bounding-box height × known real height&lt;br&gt;÷ focal length → DISTANCE (no odometry needed)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#157a4f;strokeWidth=2.4;fontSize=14.5;fontStyle=1;fontColor=#157a4f;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="790" y="322" width="550" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ================= FINAL RESULT ================= -->
+        <mxCell id="box_final" value="Reference camera&lt;br&gt;position +&lt;br&gt;BEARING × DISTANCE&lt;br&gt;→ OBJECT&lt;br&gt;POSITION&lt;br&gt;&lt;font style=&quot;font-size:11.5px;color:#55504a;font-weight:normal;&quot;&gt;not one frame's heading alone&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#157a4f;strokeWidth=2.8;fontSize=15;fontStyle=1;fontColor=#157a4f;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1418" y="150" width="230" height="150" as="geometry" />
+        </mxCell>
+
+        <!-- ================= EDGES ================= -->
+        <mxCell id="edge_frames_ma" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#55504a;strokeWidth=1.8;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="box_frames" target="box_mapanything">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_ma_points" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#55504a;strokeWidth=1.8;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="box_mapanything" target="box_points">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_ma_traj" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#55504a;strokeWidth=1.8;endArrow=block;endFill=1;exitX=0.7;exitY=1;entryX=0;entryY=0.3;" edge="1" parent="1" source="box_mapanything" target="box_trajectory">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_traj_align" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#55504a;strokeWidth=1.8;endArrow=block;endFill=1;exitX=1;exitY=0.4;entryX=0;entryY=0.4;" edge="1" parent="1" source="box_trajectory" target="box_alignment">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_odom_align" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#55504a;strokeWidth=1.8;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.85;" edge="1" parent="1" source="box_odom" target="box_alignment">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_points_filter" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#55504a;strokeWidth=1.8;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="box_points" target="box_filter">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_filter_bearing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#55504a;strokeWidth=1.8;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="box_filter" target="box_bearing">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_align_bearing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#55504a;strokeWidth=1.8;endArrow=block;endFill=1;exitX=1;exitY=0.2;entryX=0.5;entryY=1;" edge="1" parent="1" source="box_alignment" target="box_bearing">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_frames_distance" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#55504a;strokeWidth=1.8;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="box_frames" target="box_distance">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_bearing_final" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#157a4f;strokeWidth=2;endArrow=block;endFill=1;exitX=1;exitY=0.6;entryX=0.3;entryY=0;" edge="1" parent="1" source="box_bearing" target="box_final">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge_distance_final" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#157a4f;strokeWidth=2;endArrow=block;endFill=1;exitX=1;exitY=0.4;entryX=0.3;entryY=1;" edge="1" parent="1" source="box_distance" target="box_final">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ================= TITLE ================= -->
+        <mxCell id="title" value="Semantic Object Localization Pipeline — HawkBot" style="text;html=1;align=center;verticalAlign=middle;fontSize=20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="-50" width="700" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="subtitle" value="Validated across 6 independent captures: 2.77-3.26 m (mean 3.02 m, std 0.19 m) — matching the 3.00 m tape-measured ground truth, ~6% error." style="text;html=1;align=center;verticalAlign=middle;fontSize=13;fontStyle=2;fontColor=#55504a;" vertex="1" parent="1">
+          <mxGeometry x="330" y="440" width="1050" height="30" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
