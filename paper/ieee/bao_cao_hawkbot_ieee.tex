@@ -124,6 +124,15 @@ Three main processing block of pipeline: \textbf{(i) 3D reconstruction} using Ma
     \item \textbf{Combining:} localization = reference camera localization + orientation $\times$ distance.
 \end{enumerate}
 
+Figure~\ref{fig:pipeline-new} gives a visual overview of the pipeline described above, spanning three main blocks: (i) 3D reconstruction, (ii) attaching YOLO semantic labels, and (iii) distance estimation.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.66\textwidth]{paper_figs/hinh1_pipeline.drawio.pdf}
+\caption{Object localization pipeline combining bearing estimated from MapAnything semantic point clusters with monocular distance estimation.}
+\label{fig:pipeline-new}
+\end{figure*}
+
 Algorithm ~\ref{alg:labeling} describes the mechanism for attaching semantic class labels for 3D points at S4 — basic for determining target clusters at S6.
 
 \begin{algorithm}[!ht]
@@ -180,14 +189,7 @@ d = \frac{f_y \cdot H}{h_{\text{px}}}, \qquad
 \end{equation}
 produce the same $h_{\text{px}}$ and cannot be distinguished by Eq.~(3) alone — a limitation inherent to monocular imaging that MapAnything's depth inference does not resolve either (Section~\ref{sec:global-fit-stable}). DBSCAN clustering at S6 mitigates confusion with transient false detections by favoring the densest, most persistent cluster, but not confusion between two co-located instances of the same class; the method assumes a single target instance, consistent with the current setup (Section~\ref{sec:limitations}).
 
-None of quantities above depend on the pose odometry of a single frame, except for $\mathbf{o}$ (reference results) — the alignment uses entire trajectory, while the distance estimation does not use odometry Figure~\ref{fig:pipeline-new} is a visual overview of entire localization pipeline that described above, include three blocks (i) 3D reconstruction, (ii) Attaching YOLO semantic labels, and (iii) distance estimation.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.66\textwidth]{paper_figs/hinh1_pipeline.drawio.pdf}
-\caption{Object localization pipeline combining bearing estimated from MapAnything semantic point clusters with monocular distance estimation.}
-\label{fig:pipeline-new}
-\end{figure*}
+None of the quantities above depend on the pose odometry of a single frame, except for $\mathbf{o}$ (reference results) — the alignment uses the entire trajectory, while distance estimation does not use odometry at all.
 
 
 % =====================================================================
@@ -307,32 +309,38 @@ Figure~\ref{fig:six-viewers} illustrates localized object positions provided wit
 \begin{figure*}[t]
 \centering
 \begin{subfigure}[t]{0.32\textwidth}
+\centering
 \includegraphics[width=\textwidth,height=2.3cm,keepaspectratio]{paper_figs/paperfig_new36.pdf}
 \caption{Session 1 --- \SI{2.77}{\meter}}
 \end{subfigure}
 \hfill
 \begin{subfigure}[t]{0.32\textwidth}
+\centering
 \includegraphics[width=\textwidth,height=2.3cm,keepaspectratio]{paper_figs/paperfig_new46.pdf}
 \caption{Session 2 --- \SI{2.76}{\meter}}
 \end{subfigure}
 \hfill
 \begin{subfigure}[t]{0.32\textwidth}
+\centering
 \includegraphics[width=\textwidth,height=2.3cm,keepaspectratio]{paper_figs/paperfig_new47.pdf}
 \caption{Session 3 --- \SI{3.13}{\meter}}
 \end{subfigure}
 
 \vspace{0.1em}
 \begin{subfigure}[t]{0.32\textwidth}
+\centering
 \includegraphics[width=\textwidth,height=2.3cm,keepaspectratio]{paper_figs/paperfig_new48.pdf}
 \caption{Session 4 --- \SI{3.08}{\meter}}
 \end{subfigure}
 \hfill
 \begin{subfigure}[t]{0.32\textwidth}
+\centering
 \includegraphics[width=\textwidth,height=2.3cm,keepaspectratio]{paper_figs/paperfig_new49.pdf}
 \caption{Session 5 --- \SI{3.26}{\meter}}
 \end{subfigure}
 \hfill
 \begin{subfigure}[t]{0.32\textwidth}
+\centering
 \includegraphics[width=\textwidth,height=2.3cm,keepaspectratio]{paper_figs/paperfig_new50.pdf}
 \caption{Session 6 --- \SI{3.12}{\meter}}
 \end{subfigure}
