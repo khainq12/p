@@ -107,7 +107,7 @@ K = \begin{bmatrix}
 
 \textbf{Computational capacity.} ESP32-CAM does not perform computer vision processing locally; all Yolo and MapAnything inference runs on a remote GPU server. The current pipeline operates offline in post-processing rather than as an online SLAM system; adding an online correction mechanism, such as loop closure and pose-graph optimization, requires computational resources the current platform cannot provide. 
 
-The two limitations above are reasons why this research focuses on finding a software methodology; it does not require upgrading hardware- the methodology, which combines semantic clusters and single image distance(Section~\ref{sec:math}) — rather than adding more hardware- is proposed as an improvement in future development (Section~\ref{sec:limitations}).
+These two constraints motivate the software-only approach of Section~\ref{sec:math}, rather than a hardware upgrade (Section~\ref{sec:limitations}).
 
 \subsection{Pipeline Architecture}
 
@@ -174,11 +174,11 @@ d = \frac{f_y \cdot H}{h_{\text{px}}}, \qquad
 \mathbf{x}^* = \mathbf{o} + d \, \hat{\mathbf{b}}
 \end{equation}
 
-\textbf{Distance-size ambiguity.} The formula (3) prior assumption $H$ for the target class. If there are two objects of the same class with known actual height $H_1 \neq H_2$, placed at two distances $d_1, d_2$ such that
+\textbf{Distance-size ambiguity.} Formula (3) assumes a known height $H$ for the target class. Two objects of the same class with different true heights $H_1 \neq H_2$ at distances $d_1, d_2$ satisfying
 \begin{equation}
 \frac{H_1}{d_1} = \frac{H_2}{d_2} \;\left(= \frac{h_{\text{px}}}{f_y}\right),
 \end{equation}
-Two objects show the same $h_{\text{px}}$ on image and the formula (3) does not distinguish — this is distance- size ambiguity which is typical of monocular camera, it is not solved by only formula, geometric or deep learning model (Section~\ref{sec:global-fit-stable} Further analysis of why Mapanything's depth inference does not automatically overcome this limitation. The clustering step DBSCAN at S6, prioritizing the densest and persistent point cluster across multiple frames, reducing the risk of confusing it with false objects that appear only briefly, but does not eliminate confusion between two same class entities  — the method implicitly assumes that the environment contains only one instance of the target class, which is consistent with the current experimental setup (Section~\ref{sec:limitations}).
+produce the same $h_{\text{px}}$ and cannot be distinguished by Eq.~(3) alone — a limitation inherent to monocular imaging that MapAnything's depth inference does not resolve either (Section~\ref{sec:global-fit-stable}). DBSCAN clustering at S6 mitigates confusion with transient false detections by favoring the densest, most persistent cluster, but not confusion between two co-located instances of the same class; the method assumes a single target instance, consistent with the current setup (Section~\ref{sec:limitations}).
 
 None of quantities above depend on the pose odometry of a single frame, except for $\mathbf{o}$ (reference results) — the alignment uses entire trajectory, while the distance estimation does not use odometry Figure~\ref{fig:pipeline-new} is a visual overview of entire localization pipeline that described above, include three blocks (i) 3D reconstruction, (ii) Attaching YOLO semantic labels, and (iii) distance estimation.
 
@@ -195,7 +195,7 @@ None of quantities above depend on the pose odometry of a single frame, except f
 \label{sec:semantic-bearing}
 % =====================================================================
 
-With each capture session, three processing blocks at Section~\ref{sec:math} are performed sequentially: \textbf{(i)} Reconstructing a 3D map using MapAnything, \textbf{(ii)} Attaching YOLO labels on each 3D point to have semantic point cloud, and \textbf{(iii)} Estimating single-image distance — two orient signals (from (ii)) and distance (from (iii)) then combined to create localization. The method is validated at six independent capture session at \SI{3.00}{\meter} (measured using a measuring tape.), Each time, the robot observes the plant pot from a different trajectory. To evaluate the stability when extending the range, the process is repeated at \SI{5}{\meter} and \SI{7}{\meter}, five sessions at each level, combining with \SI{3}{\meter} at Table~\ref{tab:semantic-bearing-results} and analyzed separately at Section~\ref{sec:distance-eval}. Figure~\ref{fig:room-scan} illustrates the experimental environment from a single scan of the entire room. (detail at Section~\ref{sec:room-scan}).
+Each capture session follows the B1--B8 procedure of Section~\ref{sec:math}. The method is validated over six independent sessions at \SI{3.00}{\meter} (measured with a measuring tape), the robot observing the plant pot from a different trajectory each time. To evaluate stability at greater range, the process is repeated at \SI{5}{\meter} and \SI{7}{\meter}, five sessions each, combined with the \SI{3}{\meter} results in Table~\ref{tab:semantic-bearing-results} and analyzed separately in Section~\ref{sec:distance-eval}. Figure~\ref{fig:room-scan} illustrates the experimental environment from a full-room scan (Section~\ref{sec:room-scan}).
 
 \begin{figure*}[t]
 \centering
@@ -261,11 +261,11 @@ five sessions each), together with input quality indicators}
 \end{table*}
 \subsection{Quantitative results}
 
-Table~\ref{tab:semantic-bearing-results} The results at each session are summarized, together with  detection/clustering quality indicators : the YOLO detection confidence at frame which used to estimate distance, the height of bounding box respectively, the number of points which in the largest semantic cluster used to inference orientation.
+Table~\ref{tab:semantic-bearing-results} summarizes the results per session along with three quality indicators: YOLO detection confidence at the distance-estimation frame, the corresponding bounding-box height, and the number of points in the largest semantic cluster used for orientation.
 
-Six captured sessions show errors in the range $2$--$9\%$ compared to real-world values; no session shows an excessively large error \SI{0.26}{\meter}. Notably, the YOLO confidence varies considerably (0.63--0.90) while the number of semantic cluster points varies at high level ($>$29\,700/30\,000 points, meaning target cluster accounts for more than 99\% of the sampled points) — this shows that the objects are reconstructed by MapAnything  into a contiguous point cluster, with little fragmentation, regardless of the detection confidence.
+Six sessions show errors in the range $2$--$9\%$; no session exceeds \SI{0.26}{\meter}. YOLO confidence varies considerably (0.63--0.90) while semantic cluster size stays high ($>$29\,700/30\,000 points, over 99\% of sampled points), showing that MapAnything reconstructs a contiguous, largely unfragmented point cluster regardless of detection confidence.
 
-\textbf{Correlation between input quality indicators and localization error} The Pearson correlation coefficient between YOLO confidence and the absolute error is $r = 0.34$; between the number of clusters and the error $r = 0.20$ — Both correlations are weak and statistically insignificant. with $n=6$. This result is consistent with the theoretical expectation. At section~\ref{sec:global-fit-stable}: the accuracy mainly comes from separating two signals from  pose odometry each frame,rather than coming from high-confidence detection or large semantic cluster.
+\textbf{Correlation between input quality and error.} The Pearson correlation is $r=0.34$ (YOLO confidence) and $r=0.20$ (cluster size) against absolute error — both weak and statistically insignificant at $n=6$, consistent with Section~\ref{sec:global-fit-stable}: accuracy comes from separating the two signals from per-frame pose odometry, not from high-confidence detection or large clusters.
 
 \begin{figure}[t]
 \centering
@@ -307,33 +307,33 @@ Figure~\ref{fig:six-viewers} illustrates localized object positions provided wit
 \begin{figure*}[t]
 \centering
 \begin{subfigure}[t]{0.32\textwidth}
-\includegraphics[width=\textwidth]{paper_figs/paperfig_new36.png}
+\includegraphics[width=\textwidth,height=3.0cm,keepaspectratio]{paper_figs/paperfig_new36.png}
 \caption{Session 1 --- \SI{2.77}{\meter}}
 \end{subfigure}
 \hfill
 \begin{subfigure}[t]{0.32\textwidth}
-\includegraphics[width=\textwidth]{paper_figs/paperfig_new46.png}
+\includegraphics[width=\textwidth,height=3.0cm,keepaspectratio]{paper_figs/paperfig_new46.png}
 \caption{Session 2 --- \SI{2.76}{\meter}}
 \end{subfigure}
 \hfill
 \begin{subfigure}[t]{0.32\textwidth}
-\includegraphics[width=\textwidth]{paper_figs/paperfig_new47.png}
+\includegraphics[width=\textwidth,height=3.0cm,keepaspectratio]{paper_figs/paperfig_new47.png}
 \caption{Session 3 --- \SI{3.13}{\meter}}
 \end{subfigure}
 
 \vspace{0.1em}
 \begin{subfigure}[t]{0.32\textwidth}
-\includegraphics[width=\textwidth]{paper_figs/paperfig_new48.png}
+\includegraphics[width=\textwidth,height=3.0cm,keepaspectratio]{paper_figs/paperfig_new48.png}
 \caption{Session 4 --- \SI{3.08}{\meter}}
 \end{subfigure}
 \hfill
 \begin{subfigure}[t]{0.32\textwidth}
-\includegraphics[width=\textwidth]{paper_figs/paperfig_new49.png}
+\includegraphics[width=\textwidth,height=3.0cm,keepaspectratio]{paper_figs/paperfig_new49.png}
 \caption{Session 5 --- \SI{3.26}{\meter}}
 \end{subfigure}
 \hfill
 \begin{subfigure}[t]{0.32\textwidth}
-\includegraphics[width=\textwidth]{paper_figs/paperfig_new50.png}
+\includegraphics[width=\textwidth,height=3.0cm,keepaspectratio]{paper_figs/paperfig_new50.png}
 \caption{Session 6 --- \SI{3.12}{\meter}}
 \end{subfigure}
 
@@ -390,8 +390,8 @@ Directly using the 3D position from MapAnything produces substantially larger er
 \label{sec:hw-alternatives}
 
 \begin{itemize}[leftmargin=*,itemsep=0.1em,topsep=0.2em,parsep=0pt]
-\item \textbf{ArUco:} A fixed \SI{15}{\centi\meter} marker was tested as an anchor. With the QVGA camera, \texttt{solvePnP} produced errors of \SIrange{0.3}{0.7}{\meter} beyond \SI{2}{\meter} or under oblique views, comparable to or larger than the drift to be corrected.
-\item \textbf{EKF (\texttt{/odometry/filtered}):} An EKF combining IMU measurements was tested, but its covariance diverged to an unrealistic magnitude ($\sim 10^{22}$), making it unsuitable without further tuning.
+\item \textbf{ArUco:} A \SI{15}{\centi\meter} marker gave \texttt{solvePnP} errors of \SIrange{0.3}{0.7}{\meter} beyond \SI{2}{\meter} or under oblique views --- as large as the drift it was meant to correct.
+\item \textbf{EKF (\texttt{/odometry/filtered}):} covariance diverged to $\sim 10^{22}$, unusable without further tuning.
 \end{itemize}
 
 
